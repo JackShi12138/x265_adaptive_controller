@@ -10,6 +10,7 @@ PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
 sys.path.append(PROJECT_ROOT)
 
 from core.x265_wrapper import X265Wrapper
+from utils.yuv_io import YUVReader  # [新增] 导入 YUV 读取工具类
 
 
 def check_file_size(filepath, width, height, frames):
@@ -43,10 +44,10 @@ def check_file_size(filepath, width, height, frames):
 
 def run_test():
     parser = argparse.ArgumentParser(
-        description="x265 Wrapper Basic Encode Test (Match CLI)"
+        description="x265 Wrapper Basic Encode Test (With YUVReader)"
     )
 
-    # [更新] 针对 RaceHorses_416x240_30.yuv 设置默认参数
+    # 针对 RaceHorses_416x240_30.yuv 设置默认参数
     default_input = "/home/shiyushen/x265_sequence/ClassD/RaceHorses_416x240_30.yuv"
     parser.add_argument(
         "--input", type=str, default=default_input, help="Input YUV file path"
@@ -72,7 +73,7 @@ def run_test():
         help="Path to libx265.so",
     )
 
-    # [修改] 完全对齐 CLI 的参数：Bitrate 300k, CRF 默认关闭 (0)
+    # 码率控制参数
     parser.add_argument(
         "--bitrate",
         type=int,
@@ -85,7 +86,6 @@ def run_test():
         default=0,
         help="Constant Rate Factor (0 to disable if bitrate is set)",
     )
-    # [修改] CLI 默认为 medium，我们这里也由 slow 改为 medium
     parser.add_argument(
         "--preset", type=str, default="slow", help="Preset (medium, slow, etc.)"
     )
@@ -96,7 +96,7 @@ def run_test():
     is_valid, msg = check_file_size(args.input, args.width, args.height, args.frames)
     print(f"[{'OK' if is_valid else 'WARNING'}] {msg}")
 
-    print(f"=== 开始全流程编码测试 (CLI复刻版) ===")
+    print(f"=== 开始全流程编码测试 (YUVReader 集成版) ===")
     print(f"输入: {args.input} ({args.width}x{args.height} @ {args.fps}fps)")
     print(f"输出: {args.output}")
 
@@ -105,7 +105,6 @@ def run_test():
     param = wrapper.param_alloc()
 
     # 2. 参数配置
-    # [修改] 使用 medium 以匹配 CLI 默认行为
     print(f"配置模式: Preset={args.preset}")
     wrapper.param_default_preset(param, args.preset, "None")
 
@@ -113,14 +112,11 @@ def run_test():
     wrapper.param_parse(param, "fps", str(args.fps))
     wrapper.param_parse(param, "input-csp", "i420")
 
-    # 画质控制：优先匹配 CLI 的 Bitrate 模式
     if args.bitrate > 0:
         print(f"配置模式: ABR (Bitrate: {args.bitrate} kbps)")
         wrapper.param_parse(param, "bitrate", str(args.bitrate))
         wrapper.param_parse(param, "vbv-maxrate", str(args.bitrate))
-        wrapper.param_parse(
-            param, "vbv-bufsize", str(args.bitrate * 2)
-        )  # CLI: 36000/300 approx
+        wrapper.param_parse(param, "vbv-bufsize", str(args.bitrate * 2))
     elif args.crf > 0:
         print(f"配置模式: CRF (Quality: {args.crf})")
         wrapper.param_parse(param, "crf", str(args.crf))
@@ -138,87 +134,82 @@ def run_test():
     wrapper.picture_init(param, pic_in_ptr)
     pic_out_ptr = wrapper.picture_alloc()
 
-    # 4. YUV Buffer
-    y_size = args.width * args.height
-    uv_size = y_size // 4
-    total_size = y_size + uv_size * 2
-
-    yuv_buffer = (ctypes.c_ubyte * total_size)()
-
-    addr_y = ctypes.addressof(yuv_buffer)
-    addr_u = addr_y + y_size
-    addr_v = addr_u + uv_size
-
-    # 5. 设置 Picture 指针与 Stride
-    pic = pic_in_ptr.contents
-
-    # [新增] 显式设置位深和色彩空间，防止 C 接口默认值错误
-    pic.bitDepth = 8
-    pic.colorSpace = 1  # X265_CSP_I420 = 1
-
-    pic.planes[0] = ctypes.cast(addr_y, ctypes.c_void_p)
-    pic.planes[1] = ctypes.cast(addr_u, ctypes.c_void_p)
-    pic.planes[2] = ctypes.cast(addr_v, ctypes.c_void_p)
-
-    pic.stride[0] = args.width
-    pic.stride[1] = args.width // 2
-    pic.stride[2] = args.width // 2
-
-    print(f"Pic Config -> BitDepth: {pic.bitDepth}, ColorSpace: {pic.colorSpace}")
-    print(f"Stride Y: {pic.stride[0]}, U: {pic.stride[1]}, V: {pic.stride[2]}")
-
-    # 6. 编码循环
-    f_in = open(args.input, "rb")
+    # 4. YUV IO 与 编码循环
+    # [修改] 使用 YUVReader 上下文管理器，自动处理文件打开、内存缓冲和指针计算
     f_out = open(args.output, "wb")
 
-    input_frames = 0
-    encoded_frames = 0
-
     try:
-        start_time = time.time()
-        for i in range(args.frames):
-            read_len = f_in.readinto(yuv_buffer)
-            if read_len < total_size:
-                print(f"[INFO] End of input file at frame {i}")
-                break
+        with YUVReader(args.input, args.width, args.height, fps=args.fps) as yuv_reader:
 
-            pic.pts = i
+            # 配置 Picture 结构体属性
+            pic = pic_in_ptr.contents
+            pic.bitDepth = 8
+            pic.colorSpace = 1  # X265_CSP_I420
 
-            ret, nal_list = wrapper.encode(encoder, pic_in_ptr, pic_out_ptr)
+            # [关键] 从 YUVReader 获取安全的内存指针
+            y_ptr, u_ptr, v_ptr = yuv_reader.get_pointers()
+            pic.planes[0] = y_ptr
+            pic.planes[1] = u_ptr
+            pic.planes[2] = v_ptr
 
-            if ret < 0:
-                print(f"[FAIL] Encode error at frame {i}")
-                break
+            # [关键] 从 YUVReader 获取正确的 Stride
+            y_stride, u_stride, v_stride = yuv_reader.get_strides()
+            pic.stride[0] = y_stride
+            pic.stride[1] = u_stride
+            pic.stride[2] = v_stride
 
-            for nal in nal_list:
-                f_out.write(nal)
+            print(
+                f"Pic Config -> BitDepth: {pic.bitDepth}, ColorSpace: {pic.colorSpace}"
+            )
+            print(f"Stride Y: {pic.stride[0]}, U: {pic.stride[1]}, V: {pic.stride[2]}")
 
-            if ret > 0:
+            start_time = time.time()
+            input_frames = 0
+            encoded_frames = 0
+
+            for i in range(args.frames):
+                # [关键] 读取下一帧数据到内部 Buffer
+                if not yuv_reader.read_frame():
+                    print(f"[INFO] End of input file at frame {i}")
+                    break
+
+                pic.pts = i
+
+                # 编码
+                ret, nal_list = wrapper.encode(encoder, pic_in_ptr, pic_out_ptr)
+
+                if ret < 0:
+                    print(f"[FAIL] Encode error at frame {i}")
+                    break
+
+                for nal in nal_list:
+                    f_out.write(nal)
+
+                if ret > 0:
+                    encoded_frames += 1
+
+                input_frames += 1
+                if i % 50 == 0:
+                    print(f"Proc Frame {i}/{args.frames}...")
+
+            # Flush 编码器
+            print(f"--- 输入完成，Flush 编码器 ---")
+            while True:
+                ret, nal_list = wrapper.encode(encoder, None, pic_out_ptr)
+                if ret <= 0:
+                    break
+                for nal in nal_list:
+                    f_out.write(nal)
                 encoded_frames += 1
 
-            input_frames += 1
-            if i % 50 == 0:  # 减少打印频率
-                print(f"Proc Frame {i}/{args.frames}...")
-
-        # Flush
-        print(f"--- 输入完成，Flush 编码器 ---")
-        while True:
-            ret, nal_list = wrapper.encode(encoder, None, pic_out_ptr)
-            if ret <= 0:
-                break
-            for nal in nal_list:
-                f_out.write(nal)
-            encoded_frames += 1
-
-        end_time = time.time()
-        duration = end_time - start_time
-        fps = encoded_frames / duration if duration > 0 else 0
-        print(
-            f"Performance: {encoded_frames} frames in {duration:.2f}s ({fps:.2f} fps)"
-        )
+            end_time = time.time()
+            duration = end_time - start_time
+            fps = encoded_frames / duration if duration > 0 else 0
+            print(
+                f"Performance: {encoded_frames} frames in {duration:.2f}s ({fps:.2f} fps)"
+            )
 
     finally:
-        f_in.close()
         f_out.close()
         if pic_in_ptr:
             wrapper.picture_free(pic_in_ptr)
