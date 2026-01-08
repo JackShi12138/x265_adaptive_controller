@@ -1,0 +1,56 @@
+{
+    "description": "Configuration tables for Inter-module Relevancy Guided Optimization Model (Paper Table III & Eq 4/6)",
+    
+    "modules": ["VAQ", "CUTree", "PsyRD", "PsyRDOQ", "QComp"],
+    
+    "param_mapping": {
+        "VAQ": "aq-strength",
+        "CUTree": "cutree-strength",
+        "PsyRD": "psy-rd",
+        "PsyRDOQ": "psy-rdoq",
+        "QComp": "qcomp"
+    },
+
+    "feature_mapping": {
+        "VAQ": "w1_var",
+        "CUTree": "w2_sad",
+        "PsyRD": "w3_grad",
+        "PsyRDOQ": "w4_tex",
+        "QComp": "w5_cplx"
+    },
+
+    "theta": {
+        "comment": "Direction indicator factor for parameter adjustment",
+        "VAQ": -1,
+        "CUTree": 1,
+        "PsyRD": -1,
+        "PsyRDOQ": -1,
+        "QComp": -1
+    },
+
+    "h_omega": {
+        "comment": "Feature-Rate Sensitivity (1: Positive correlation, -1: Negative)",
+        "VAQ": 1,
+        "CUTree": 1,
+        "PsyRD": 1,
+        "PsyRDOQ": 1,
+        "QComp": 1
+    },
+
+    "phi_matrix": {
+        "comment": "Inter-module Relevancy Matrix (Row i affected by Column j). Values from Paper Table III (Approx)",
+        "VAQ":     {"VAQ": 1.0, "CUTree": -0.2, "PsyRD": 0.4,  "PsyRDOQ": 0.3,  "QComp": 0.5},
+        "CUTree":  {"VAQ": -0.1, "CUTree": 1.0, "PsyRD": -0.1, "PsyRDOQ": -0.1, "QComp": -0.2},
+        "PsyRD":   {"VAQ": 0.3,  "CUTree": -0.1, "PsyRD": 1.0, "PsyRDOQ": 0.6,  "QComp": 0.4},
+        "PsyRDOQ": {"VAQ": 0.2,  "CUTree": -0.1, "PsyRD": 0.5, "PsyRDOQ": 1.0,  "QComp": 0.3},
+        "QComp":   {"VAQ": 0.4,  "CUTree": -0.3, "PsyRD": 0.3, "PsyRDOQ": 0.2,  "QComp": 1.0}
+    },
+
+    "constraints": {
+        "aq-strength": {"min": 0.0, "max": 3.0, "max_step": 0.5},
+        "qcompress":   {"min": 0.5, "max": 1.0, "max_step": 0.1},
+        "psy-rd":      {"min": 0.0, "max": 5.0, "max_step": 1.0},
+        "psy-rdoq":    {"min": 0.0, "max": 10.0, "max_step": 2.0},
+        "crf":         {"min": 10.0, "max": 51.0, "max_step": 3.0}
+    }
+}
