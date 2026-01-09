@@ -114,6 +114,7 @@ def run_test():
 
     if args.bitrate > 0:
         print(f"配置模式: ABR (Bitrate: {args.bitrate} kbps)")
+        wrapper.param_parse(param, "strict-cbr", "1")
         wrapper.param_parse(param, "bitrate", str(args.bitrate))
         wrapper.param_parse(param, "vbv-maxrate", str(args.bitrate))
         wrapper.param_parse(param, "vbv-bufsize", str(args.bitrate * 2))
@@ -123,6 +124,10 @@ def run_test():
 
     wrapper.param_parse(param, "annexb", "1")
     wrapper.param_parse(param, "repeat-headers", "1")
+
+    # cutree-strength、qcomp测试
+    wrapper.param_parse(param, "cutree-strength", "1.6")
+    wrapper.param_parse(param, "qcomp", "0.8")
 
     encoder = wrapper.encoder_open(param)
     if not encoder:
