@@ -1,0 +1,266 @@
+{
+    "PeopleOnStreet_2560x1600_30_crop": {
+        "class": "A",
+        "width": 2560,
+        "height": 1600,
+        "fps": 30,
+        "bitrates": {
+            "Very Low": 2000,
+            "Low": 4000,
+            "Medium": 8000,
+            "High": 16000
+        }
+    },
+    "Traffic_2560x1600_30_crop": {
+        "class": "A",
+        "width": 2560,
+        "height": 1600,
+        "fps": 30,
+        "bitrates": {
+            "Very Low": 2000,
+            "Low": 4000,
+            "Medium": 8000,
+            "High": 16000
+        }
+    },
+    "BasketballDrive_1920x1080_50": {
+        "class": "B",
+        "width": 1920,
+        "height": 1080,
+        "fps": 50,
+        "bitrates": {
+            "Very Low": 1000,
+            "Low": 2000,
+            "Medium": 4000,
+            "High": 8000
+        }
+    },
+    "BQTerrace_1920x1080_60": {
+        "class": "B",
+        "width": 1920,
+        "height": 1080,
+        "fps": 60,
+        "bitrates": {
+            "Very Low": 1000,
+            "Low": 2000,
+            "Medium": 4000,
+            "High": 8000
+        }
+    },
+    "Cactus_1920x1080_50": {
+        "class": "B",
+        "width": 1920,
+        "height": 1080,
+        "fps": 50,
+        "bitrates": {
+            "Very Low": 1000,
+            "Low": 2000,
+            "Medium": 4000,
+            "High": 8000
+        }
+    },
+    "Kimono1_1920x1080_24": {
+        "class": "B",
+        "width": 1920,
+        "height": 1080,
+        "fps": 24,
+        "bitrates": {
+            "Very Low": 1000,
+            "Low": 2000,
+            "Medium": 4000,
+            "High": 8000
+        }
+    },
+    "ParkScene_1920x1080_24": {
+        "class": "B",
+        "width": 1920,
+        "height": 1080,
+        "fps": 24,
+        "bitrates": {
+            "Very Low": 1000,
+            "Low": 2000,
+            "Medium": 4000,
+            "High": 8000
+        }
+    },
+    "BasketballDrill_832x480_50": {
+        "class": "C",
+        "width": 832,
+        "height": 480,
+        "fps": 50,
+        "bitrates": {
+            "Very Low": 300,
+            "Low": 600,
+            "Medium": 1200,
+            "High": 2400
+        }
+    },
+    "BQMall_832x480_60": {
+        "class": "C",
+        "width": 832,
+        "height": 480,
+        "fps": 60,
+        "bitrates": {
+            "Very Low": 300,
+            "Low": 600,
+            "Medium": 1200,
+            "High": 2400
+        }
+    },
+    "PartyScene_832x480_50": {
+        "class": "C",
+        "width": 832,
+        "height": 480,
+        "fps": 50,
+        "bitrates": {
+            "Very Low": 300,
+            "Low": 600,
+            "Medium": 1200,
+            "High": 2400
+        }
+    },
+    "RaceHorses_832x480_30": {
+        "class": "C",
+        "width": 832,
+        "height": 480,
+        "fps": 30,
+        "bitrates": {
+            "Very Low": 300,
+            "Low": 600,
+            "Medium": 1200,
+            "High": 2400
+        }
+    },
+    "BasketballPass_416x240_50": {
+        "class": "D",
+        "width": 416,
+        "height": 240,
+        "fps": 50,
+        "bitrates": {
+            "Very Low": 200,
+            "Low": 400,
+            "Medium": 800,
+            "High": 1600
+        }
+    },
+    "BlowingBubbles_416x240_50": {
+        "class": "D",
+        "width": 416,
+        "height": 240,
+        "fps": 50,
+        "bitrates": {
+            "Very Low": 200,
+            "Low": 400,
+            "Medium": 800,
+            "High": 1600
+        }
+    },
+    "BQSquare_416x240_60": {
+        "class": "D",
+        "width": 416,
+        "height": 240,
+        "fps": 60,
+        "bitrates": {
+            "Very Low": 200,
+            "Low": 400,
+            "Medium": 800,
+            "High": 1600
+        }
+    },
+    "RaceHorses_416x240_30": {
+        "class": "D",
+        "width": 416,
+        "height": 240,
+        "fps": 30,
+        "bitrates": {
+            "Very Low": 200,
+            "Low": 400,
+            "Medium": 800,
+            "High": 1600
+        }
+    },
+    "FourPeople_1280x720_60": {
+        "class": "E",
+        "width": 1280,
+        "height": 720,
+        "fps": 60,
+        "bitrates": {
+            "Very Low": 400,
+            "Low": 800,
+            "Medium": 1600,
+            "High": 3200
+        }
+    },
+    "Johnny_1280x720_60": {
+        "class": "E",
+        "width": 1280,
+        "height": 720,
+        "fps": 60,
+        "bitrates": {
+            "Very Low": 400,
+            "Low": 800,
+            "Medium": 1600,
+            "High": 3200
+        }
+    },
+    "KristenAndSara_1280x720_60": {
+        "class": "E",
+        "width": 1280,
+        "height": 720,
+        "fps": 60,
+        "bitrates": {
+            "Very Low": 400,
+            "Low": 800,
+            "Medium": 1600,
+            "High": 3200
+        }
+    },
+    "BasketballDrillText_832x480_50": {
+        "class": "F",
+        "width": 832,
+        "height": 480,
+        "fps": 50,
+        "bitrates": {
+            "Very Low": 400,
+            "Low": 800,
+            "Medium": 1600,
+            "High": 3200
+        }
+    },
+    "ChinaSpeed_1024x768_30": {
+        "class": "F",
+        "width": 1024,
+        "height": 768,
+        "fps": 30,
+        "bitrates": {
+            "Very Low": 400,
+            "Low": 800,
+            "Medium": 1600,
+            "High": 3200
+        }
+    },
+    "SlideEditing_1280x720_30": {
+        "class": "F",
+        "width": 1280,
+        "height": 720,
+        "fps": 30,
+        "bitrates": {
+            "Very Low": 400,
+            "Low": 800,
+            "Medium": 1600,
+            "High": 3200
+        }
+    },
+    "SlideShow_1280x720_20": {
+        "class": "F",
+        "width": 1280,
+        "height": 720,
+        "fps": 20,
+        "bitrates": {
+            "Very Low": 400,
+            "Low": 800,
+            "Medium": 1600,
+            "High": 3200
+        }
+    }
+}
