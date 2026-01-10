@@ -2,3 +2,4 @@ temp_file/
 __pycache__/
 *.hevc
 *.yuv
+results/
