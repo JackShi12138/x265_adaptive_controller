@@ -1,0 +1,69 @@
+{
+    "description": "Pre-defined parameter sets for different quality/complexity levels. Used to initialize AdaptiveController config.",
+    
+    "profiles": {
+        "Very Low": {
+            "mode_params": {
+                "aq-mode": 0,
+                "cutree": 1,
+                "rd": 5,
+                "rdoq-level": 2
+            },
+            "tune_params": {
+                "aq-strength": 1.0,
+                "cutree-strength": 2.3,
+                "psy-rd": 0.1,
+                "psy-rdoq": 1.1,
+                "qcomp": 0.83
+            }
+        },
+        
+        "Low": {
+            "mode_params": {
+                "aq-mode": 2,
+                "cutree": 1,
+                "rd": 5,
+                "rdoq-level": 2
+            },
+            "tune_params": {
+                "aq-strength": 1.0,
+                "cutree-strength": 2.5,
+                "psy-rd": 0.1,
+                "psy-rdoq": 0.8,
+                "qcomp": 1.0
+            }
+        },
+        
+        "Medium": {
+            "mode_params": {
+                "aq-mode": 2,
+                "cutree": 1,
+                "rd": 5,
+                "rdoq-level": 2
+            },
+            "tune_params": {
+                "aq-strength": 1.0,
+                "cutree-strength": 2.5,
+                "psy-rd": 0.1,
+                "psy-rdoq": 0.9,
+                "qcomp": 0.98
+            }
+        },
+        
+        "High": {
+            "mode_params": {
+                "aq-mode": 2,
+                "cutree": 1,
+                "rd": 5,
+                "rdoq-level": 2
+            },
+            "tune_params": {
+                "aq-strength": 0.9,
+                "cutree-strength": 2.1,
+                "psy-rd": 0.1,
+                "psy-rdoq": 1.0,
+                "qcomp": 0.67
+            }
+        }
+    }
+}
