@@ -1,5 +1,5 @@
 {
-    "PeopleOnStreet_2560x1600_30_crop.yuv": [
+    "PeopleOnStreet_2560x1600_30_crop": [
         {
             "bitrate": 2274.73,
             "vmaf": 50.50144
@@ -17,7 +17,7 @@
             "vmaf": 97.424991
         }
     ],
-    "Traffic_2560x1600_30_crop.yuv": [
+    "Traffic_2560x1600_30_crop": [
         {
             "bitrate": 1945.77,
             "vmaf": 82.037539
@@ -35,7 +35,7 @@
             "vmaf": 97.187889
         }
     ],
-    "BasketballDrive_1920x1080_50.yuv": [
+    "BasketballDrive_1920x1080_50": [
         {
             "bitrate": 1003.7,
             "vmaf": 61.441952
@@ -53,7 +53,7 @@
             "vmaf": 98.856723
         }
     ],
-    "BQTerrace_1920x1080_60.yuv": [
+    "BQTerrace_1920x1080_60": [
         {
             "bitrate": 997.86,
             "vmaf": 81.672784
@@ -71,7 +71,7 @@
             "vmaf": 96.340885
         }
     ],
-    "Cactus_1920x1080_50.yuv": [
+    "Cactus_1920x1080_50": [
         {
             "bitrate": 982.06,
             "vmaf": 64.387367
@@ -89,7 +89,7 @@
             "vmaf": 95.133744
         }
     ],
-    "Kimono1_1920x1080_24.yuv": [
+    "Kimono1_1920x1080_24": [
         {
             "bitrate": 953.6,
             "vmaf": 73.954035
@@ -107,7 +107,7 @@
             "vmaf": 98.520729
         }
     ],
-    "ParkScene_1920x1080_24.yuv": [
+    "ParkScene_1920x1080_24": [
         {
             "bitrate": 968.31,
             "vmaf": 72.433318
@@ -125,7 +125,7 @@
             "vmaf": 96.292474
         }
     ],
-    "BasketballDrill_832x480_50.yuv": [
+    "BasketballDrill_832x480_50": [
         {
             "bitrate": 304.76,
             "vmaf": 58.63467
@@ -143,7 +143,7 @@
             "vmaf": 97.549572
         }
     ],
-    "BQMall_832x480_60.yuv": [
+    "BQMall_832x480_60": [
         {
             "bitrate": 306.71,
             "vmaf": 67.791565
@@ -161,7 +161,7 @@
             "vmaf": 98.80364
         }
     ],
-    "PartyScene_832x480_50.yuv": [
+    "PartyScene_832x480_50": [
         {
             "bitrate": 300.79,
             "vmaf": 56.549828
@@ -179,7 +179,7 @@
             "vmaf": 90.411751
         }
     ],
-    "RaceHorses_832x480_30.yuv": [
+    "RaceHorses_832x480_30": [
         {
             "bitrate": 317.45,
             "vmaf": 57.432571
@@ -197,7 +197,7 @@
             "vmaf": 97.309842
         }
     ],
-    "BasketballPass_416x240_50.yuv": [
+    "BasketballPass_416x240_50": [
         {
             "bitrate": 202.39,
             "vmaf": 65.089273
@@ -215,7 +215,7 @@
             "vmaf": 99.164211
         }
     ],
-    "BlowingBubbles_416x240_50.yuv": [
+    "BlowingBubbles_416x240_50": [
         {
             "bitrate": 205.77,
             "vmaf": 73.954217
@@ -233,7 +233,7 @@
             "vmaf": 95.23801
         }
     ],
-    "BQSquare_416x240_60.yuv": [
+    "BQSquare_416x240_60": [
         {
             "bitrate": 193.7,
             "vmaf": 86.450406
@@ -251,7 +251,7 @@
             "vmaf": 98.12118
         }
     ],
-    "RaceHorses_416x240_30.yuv": [
+    "RaceHorses_416x240_30": [
         {
             "bitrate": 213.7,
             "vmaf": 75.706045
@@ -269,7 +269,7 @@
             "vmaf": 99.937718
         }
     ],
-    "FourPeople_1280x720_60.yuv": [
+    "FourPeople_1280x720_60": [
         {
             "bitrate": 368.05,
             "vmaf": 81.215224
@@ -287,7 +287,7 @@
             "vmaf": 96.132096
         }
     ],
-    "Johnny_1280x720_60.yuv": [
+    "Johnny_1280x720_60": [
         {
             "bitrate": 373.71,
             "vmaf": 90.563607
@@ -305,7 +305,7 @@
             "vmaf": 96.414467
         }
     ],
-    "KristenAndSara_1280x720_60.yuv": [
+    "KristenAndSara_1280x720_60": [
         {
             "bitrate": 394.67,
             "vmaf": 87.715141
@@ -323,7 +323,7 @@
             "vmaf": 96.755226
         }
     ],
-    "BasketballDrillText_832x480_50.yuv": [
+    "BasketballDrillText_832x480_50": [
         {
             "bitrate": 405.66,
             "vmaf": 68.226386
@@ -341,7 +341,7 @@
             "vmaf": 99.623459
         }
     ],
-    "ChinaSpeed_1024x768_30.yuv": [
+    "ChinaSpeed_1024x768_30": [
         {
             "bitrate": 407.17,
             "vmaf": 69.35394
@@ -359,7 +359,7 @@
             "vmaf": 97.327523
         }
     ],
-    "SlideEditing_1280x720_30.yuv": [
+    "SlideEditing_1280x720_30": [
         {
             "bitrate": 424.05,
             "vmaf": 93.927455
@@ -377,7 +377,7 @@
             "vmaf": 97.66254
         }
     ],
-    "SlideShow_1280x720_20.yuv": [
+    "SlideShow_1280x720_20": [
         {
             "bitrate": 479.52,
             "vmaf": 97.078988
