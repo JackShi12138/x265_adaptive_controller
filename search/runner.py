@@ -21,7 +21,7 @@ STUDY_NAME = "x265_adaptive_optimization"
 
 # 配置文件路径
 CONFIG_DIR = os.path.join(PROJECT_ROOT, "config")
-ANCHOR_JSON = os.path.join(CONFIG_DIR, "anchor_results.json")
+ANCHOR_JSON = os.path.join(CONFIG_DIR, "offline_results.json")
 META_JSON = os.path.join(CONFIG_DIR, "test_sequences.json")
 INIT_JSON = os.path.join(CONFIG_DIR, "initial_params.json")
 BEST_PARAMS_JSON = os.path.join(PROJECT_ROOT, "best_hyperparams.json")

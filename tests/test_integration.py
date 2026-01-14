@@ -17,7 +17,7 @@ from search.evaluator import ParallelEvaluator
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 2. 真实配置文件路径
-ANCHOR_JSON = os.path.join(PROJECT_ROOT, "config", "anchor_results.json")
+ANCHOR_JSON = os.path.join(PROJECT_ROOT, "config", "offline_results.json")
 META_JSON = os.path.join(PROJECT_ROOT, "config", "test_sequences.json")
 INIT_JSON = os.path.join(PROJECT_ROOT, "config", "initial_params.json")
 

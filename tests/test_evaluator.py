@@ -20,7 +20,7 @@ class TestEvaluatorLogic(unittest.TestCase):
         # 1. 创建临时目录
         self.test_dir = tempfile.TemporaryDirectory()
 
-        # 2. 模拟 anchor_results.json
+        # 2. 模拟 offline_results.json
         # 包含两个 Anchor 点：
         # - 一个接近 2000 (Very Low)
         # - 一个接近 16000 (High)
