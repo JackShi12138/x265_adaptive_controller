@@ -194,3 +194,5 @@ def run_optimization():
 
 if __name__ == "__main__":
     run_optimization()
+
+# nohup python3 search/runner.py --trials 200 --workers 16 > run.log 2>&1 &
