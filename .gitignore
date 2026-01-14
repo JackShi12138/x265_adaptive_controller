@@ -5,3 +5,5 @@ __pycache__/
 results/
 *.log
 *.db
+plots/
+best_hyperparams.json
