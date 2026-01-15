@@ -41,12 +41,10 @@ def objective(trial, evaluator):
     param_a = trial.suggest_float("a", 0.5, 5.0)
     param_b = trial.suggest_float("b", 0.5, 5.0)
     beta_vaq = trial.suggest_float("beta_VAQ", 0.0, 10.0)
-    beta_cutree = trial.suggest_float("beta_CUTree", 0.0, 10.0)  # 实际控制 qcomp
+    beta_cutree = trial.suggest_float("beta_CUTree", 0.0, 10.0)
     beta_psyrd = trial.suggest_float("beta_PsyRD", 0.0, 10.0)
     beta_psyrdoq = trial.suggest_float("beta_PsyRDOQ", 0.0, 10.0)
-
-    # 因为 cutree 已经接管了 qcomp，所以 beta_qcomp 设为 0 避免冲突
-    beta_qcomp = 0.0
+    beta_qcomp = trial.suggest_float("beta_QComp", 0.0, 10.0)
 
     hyperparams = {
         "a": param_a,
@@ -162,4 +160,4 @@ def run_optimization():
 if __name__ == "__main__":
     run_optimization()
 
-# nohup python3 search/runner.py --trials 400 --workers 16 --reset > run.log 2>&1 &
+# nohup python3 search/runner.py --trials 400 --workers 10 --reset > run.log 2>&1 &
