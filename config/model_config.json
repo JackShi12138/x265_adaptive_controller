@@ -47,10 +47,10 @@
     },
 
     "constraints": {
-        "aq-strength": {"min": 0.0, "max": 3.0, "max_step": 0.2},
+        "aq-strength": {"min": 0.0, "max": 3.0, "max_step": 0.3},
         "cutree-strength":   {"min": 0, "max": 2.5, "max_step": 0.2},
-        "psy-rd":      {"min": 0.0, "max": 5.0, "max_step": 0.1},
-        "psy-rdoq":    {"min": 0.0, "max": 50.0, "max_step": 0.5},
+        "psy-rd":      {"min": 0.0, "max": 5.0, "max_step": 0.5},
+        "psy-rdoq":    {"min": 0.0, "max": 50.0, "max_step": 1.0},
         "qcomp":         {"min": 0.5, "max": 1.0, "max_step": 0.05}
     }
 }
