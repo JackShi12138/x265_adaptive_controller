@@ -83,13 +83,7 @@ class OptimizationModel:
             beta_i = self.hyperparams["beta"].get(i_name, 0.0)
             delta_p = beta_i * sum_val
 
-            # 3. [特殊处理] CUTree 不输出实际参数
-            if i_name == "CUTree":
-                # 计算逻辑保留 (也许未来有用)，但这里不做输出
-                new_params[param_key] = None
-                continue
-
-            # 4. 应用调整 (Base + Delta)
+            # 3. 应用调整 (Base + Delta)
             base_val = self.initial_params.get(param_key)
 
             # 如果用户没提供初始值，对于核心优化参数，可以尝试给个默认值
@@ -99,7 +93,7 @@ class OptimizationModel:
 
             final_val = base_val + delta_p
 
-            # 5. 安全性检查
+            # 4. 安全性检查
             constraint = self.constraints.get(param_key)
             if constraint:
                 max_step = constraint.get("max_step", 999.0)
