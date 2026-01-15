@@ -17,12 +17,12 @@ class TestFeatureExtractor(unittest.TestCase):
     def setUp(self):
         # 使用之前的 RaceHorses 素材 (如果存在)，否则生成假数据
         self.real_input = (
-            "/home/shiyushen/x265_sequence/ClassD/RaceHorses_416x240_30.yuv"
+            "/home/shiyushen/x265_sequence/ClassA/Traffic_2560x1600_30_crop.yuv"
         )
-        self.width = 416
-        self.height = 240
+        self.width = 2560
+        self.height = 1600
         self.fps = 30
-        self.gop = 30  # 假设 GOP 为 30 (1秒)
+        self.gop = 40
 
         self.use_real_file = os.path.exists(self.real_input)
         if not self.use_real_file:

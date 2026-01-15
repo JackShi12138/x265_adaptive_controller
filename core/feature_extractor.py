@@ -34,7 +34,7 @@ class FeatureExtractor:
         self.prev_frame_y = None
 
         # 标准化参考常数
-        self.NORM_REF = {"var": 2500.0, "sad": 30.0, "grad": 45.0, "luma": 255.0}
+        self.NORM_REF = {"var": 4000.0, "sad": 60.0, "grad": 100.0, "luma": 255.0}
 
     def _ptr_to_numpy(self, y_ptr):
         """将 ctypes 指针转换为 numpy 数组视图"""
