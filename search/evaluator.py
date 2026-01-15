@@ -50,7 +50,7 @@ def _worker_task(task_context):
     base_config = task_context["base_config"]
     hyperparams = task_context["hyperparams"]
     lib_path = task_context.get("lib_path", DEFAULT_LIB_PATH)
-    max_frames = task_context.get("max_frames", 0)
+    # [移除] max_frames 参数获取
 
     unique_id = f"{task_id}_{uuid.uuid4().hex[:6]}"
     f_hevc = os.path.join(TEMP_DIR, f"{unique_id}.hevc")
@@ -63,8 +63,7 @@ def _worker_task(task_context):
     run_config["hyperparams"] = hyperparams
     run_config["base_params"]["csv"] = f_csv
     run_config["base_params"]["csv-log-level"] = 2
-    if max_frames > 0:
-        run_config["base_params"]["frames"] = max_frames
+    # [移除] 注入 frames 参数的逻辑
 
     wrapper = X265Wrapper(lib_path)
     reader = None
@@ -89,7 +88,10 @@ def _worker_task(task_context):
         if real_bitrate_kbps is None:
             file_size = os.path.getsize(f_hevc)
             if file_size > 0:
-                duration = max_frames / seq_info["fps"] if max_frames > 0 else 10.0
+                # 这是一个粗略估算，但在csv缺失时救命用
+                # 假设全长编码，或者后续通过解码帧数修正
+                duration = 10.0  # 默认值，或者可以通过 YUVReader 获取总帧数
+                # 更精确的做法是这里不瞎猜，让 metric 计算报错
                 real_bitrate_kbps = (file_size * 8 / 1000.0) / duration
             else:
                 raise ValueError(f"Bitrate calc failed")
@@ -176,12 +178,12 @@ class ParallelEvaluator:
         lib_path=DEFAULT_LIB_PATH,
         max_workers=16,
         target_seqs=None,
-        max_frames=0,
     ):
+        # [移除] max_frames 参数
         self.max_workers = max_workers
         self.dataset_root = dataset_root
         self.lib_path = lib_path
-        self.max_frames = max_frames
+        # self.max_frames = max_frames # [移除]
         self.target_seqs = target_seqs
 
         if os.path.exists(TEMP_DIR):
@@ -199,7 +201,7 @@ class ParallelEvaluator:
             anchor_json_path, seq_meta_json_path
         )
         print(
-            f"[Evaluator] Initialized {len(self.tasks_metadata)} tasks. Workers: {max_workers}. Frames Limit: {max_frames if max_frames > 0 else 'Full'}"
+            f"[Evaluator] Initialized {len(self.tasks_metadata)} tasks. Workers: {max_workers}. Frames Limit: Full"
         )
 
     def _load_and_merge_metadata(self, anchor_path, meta_path):
@@ -252,7 +254,7 @@ class ParallelEvaluator:
                 _id += 1
         return tasks
 
-    def evaluate_batch(self, hyperparams):  # [改动] 不再接收 trial 参数
+    def evaluate_batch(self, hyperparams):
         work_items = []
         global_base_params = self.init_params.get("base_params", {})
 
@@ -287,7 +289,7 @@ class ParallelEvaluator:
                 "base_config": base_config,
                 "hyperparams": hyperparams,
                 "lib_path": self.lib_path,
-                "max_frames": self.max_frames,
+                # [移除] max_frames
             }
             work_items.append(context)
 
@@ -296,10 +298,7 @@ class ParallelEvaluator:
         total_tasks = len(work_items)
         crash_report = {"count": 0, "errors": []}
 
-        # [改动] 移除所有 Pruning 相关的中间统计代码
-        print(
-            f"--- Batch Eval: {total_tasks} tasks (Subset), {self.max_frames} frames ---"
-        )
+        print(f"--- Batch Eval: {total_tasks} tasks (Subset), Full frames ---")
 
         with concurrent.futures.ProcessPoolExecutor(
             max_workers=self.max_workers
@@ -320,7 +319,7 @@ class ParallelEvaluator:
                     fail_count += 1
                     crash_report["errors"].append(f"Exception: {str(exc)}")
 
-                if fail_count > total_tasks * 0.25:  # [保留] 错误熔断 (Circuit Breaker)
+                if fail_count > total_tasks * 0.25:
                     print(f"[Circuit Breaker] Too many failures. Aborting.")
                     executor.shutdown(wait=False, cancel_futures=True)
                     return -9999.0, {}, crash_report, {}

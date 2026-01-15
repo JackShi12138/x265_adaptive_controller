@@ -35,17 +35,18 @@ TRAINING_SET = [
     "BasketballDrill_832x480_50",
     "KristenAndSara_1280x720_60",
 ]
-SEARCH_FRAMES = 200
 
 
 def objective(trial, evaluator):
     param_a = trial.suggest_float("a", 0.5, 5.0)
     param_b = trial.suggest_float("b", 0.5, 5.0)
     beta_vaq = trial.suggest_float("beta_VAQ", 0.0, 10.0)
-    beta_cutree = trial.suggest_float("beta_CUTree", 0.0, 10.0)
+    beta_cutree = trial.suggest_float("beta_CUTree", 0.0, 10.0)  # 实际控制 qcomp
     beta_psyrd = trial.suggest_float("beta_PsyRD", 0.0, 10.0)
     beta_psyrdoq = trial.suggest_float("beta_PsyRDOQ", 0.0, 10.0)
-    beta_qcomp = trial.suggest_float("beta_QComp", 0.0, 10.0)
+
+    # 因为 cutree 已经接管了 qcomp，所以 beta_qcomp 设为 0 避免冲突
+    beta_qcomp = 0.0
 
     hyperparams = {
         "a": param_a,
@@ -63,14 +64,13 @@ def objective(trial, evaluator):
         f"\n[Trial {trial.number}] Evaluator starting with: {json.dumps(hyperparams)}"
     )
 
-    # [改动] 不再传入 trial，完全移除剪枝逻辑
     mean_score, details, crash_report, stats = evaluator.evaluate_batch(hyperparams)
 
     if mean_score == -9999.0:
         print(f"[Trial {trial.number}] Failed.")
         raise optuna.TrialPruned("Eval Failed")
 
-    # === [强化] 惩罚项计算 ===
+    # === 惩罚项计算 ===
     penalty_sum = 0.0
     negative_count = 0
     for seq_name, info in details.items():
@@ -79,8 +79,7 @@ def objective(trial, evaluator):
             penalty_sum += abs(val)
             negative_count += 1
 
-    # [改动] 提高惩罚系数，优先保证"无负值"
-    # 系数 3.0 意味着: "消除 0.1 的负收益" 比 "获得 0.3 的正收益" 更重要
+    # 系数 3.0: 强力驱逐负收益
     PENALTY_LAMBDA = 3.0
     final_objective = mean_score - (PENALTY_LAMBDA * penalty_sum)
 
@@ -108,7 +107,7 @@ def run_optimization():
 
     target_seqs = None if args.full_set else TRAINING_SET
     print(
-        f"Search Strategy: NO PRUNING, {'FULL SET' if args.full_set else 'TRAINING SUBSET'}, 200 FRAMES."
+        f"Search Strategy: NO PRUNING, {'FULL SET' if args.full_set else 'TRAINING SUBSET'}, FULL FRAMES."
     )
 
     evaluator = ParallelEvaluator(
@@ -119,7 +118,7 @@ def run_optimization():
         lib_path=args.lib,
         max_workers=args.workers,
         target_seqs=target_seqs,
-        max_frames=SEARCH_FRAMES,
+        # [移除] max_frames
     )
 
     if args.reset and os.path.exists(DB_PATH):
