@@ -4,6 +4,7 @@ import json
 import optuna
 import argparse
 from datetime import datetime
+from optuna.samplers import CmaEsSampler
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
@@ -121,11 +122,14 @@ def run_optimization():
 
     if args.reset and os.path.exists(DB_PATH):
         os.remove(DB_PATH)
+
+    sampler = CmaEsSampler(restart_strategy="ipop", n_startup_trials=10)
     study = optuna.create_study(
         study_name=STUDY_NAME,
         storage=STORAGE_URL,
         direction="maximize",
         load_if_exists=True,
+        sampler=sampler,  # 传入 sampler
     )
 
     try:
