@@ -20,7 +20,7 @@ CONFIG_DIR = os.path.join(PROJECT_ROOT, "config")
 
 # 1. 基准数据 (Anchor): x265 Slow Default
 # 请确保此文件存在，它决定了我们计算 BD-VMAF 的参照系
-BASELINE_JSON = os.path.join(CONFIG_DIR, "baseline_results.json")
+BASELINE_JSON = os.path.join(CONFIG_DIR, "offline_results.json")
 
 # 2. 序列元数据
 META_JSON = os.path.join(CONFIG_DIR, "test_sequences.json")
