@@ -27,18 +27,15 @@ DEFAULT_DATASET_ROOT = "/home/shiyushen/x265_sequence/"
 TRAINING_SET = [
     "BasketballDrive_1920x1080_50",
     "Cactus_1920x1080_50",
-    "PartyScene_832x480_50",
     "RaceHorses_416x240_30",
     "FourPeople_1280x720_60",
     "SlideEditing_1280x720_30",
-    "PartyScene_832x480_50",
     "SlideShow_1280x720_20",
-    "BasketballDrill_832x480_50",
-    "KristenAndSara_1280x720_60",
 ]
 
 
 def objective(trial, evaluator):
+    # 1. 定义搜索空间
     param_a = trial.suggest_float("a", 0.5, 5.0)
     param_b = trial.suggest_float("b", 0.5, 5.0)
     beta_vaq = trial.suggest_float("beta_VAQ", 0.0, 10.0)
@@ -63,34 +60,48 @@ def objective(trial, evaluator):
         f"\n[Trial {trial.number}] Evaluator starting with: {json.dumps(hyperparams)}"
     )
 
+    # 2. 执行评估
     mean_score, details, crash_report, stats = evaluator.evaluate_batch(hyperparams)
 
     if mean_score == -9999.0:
         print(f"[Trial {trial.number}] Failed.")
         raise optuna.TrialPruned("Eval Failed")
 
-    # === 惩罚项计算 ===
-    penalty_sum = 0.0
-    negative_count = 0
-    for seq_name, info in details.items():
-        val = info.get("bd_vmaf", 0.0)
-        if val < 0:
-            penalty_sum += abs(val)
-            negative_count += 1
+    # === 3. 核心评分逻辑 (Min-Max 策略) ===
+    scores = [info.get("bd_vmaf", 0.0) for info in details.values()]
+    min_score = min(scores)
+    mean_score = sum(scores) / len(scores)
 
-    # 系数 3.0: 强力驱逐负收益
-    PENALTY_LAMBDA = 3.0
-    final_objective = mean_score - (PENALTY_LAMBDA * penalty_sum)
+    # 统计有多少个负收益，方便看日志
+    negative_count = sum(1 for s in scores if s < 0)
 
+    # 阈值 -0.09：允许轻微的负波动，但不能太离谱
+    THRESHOLD = -0.09
+
+    if min_score < THRESHOLD:
+        # [生存模式] 有严重短板，全力消除短板
+        # 放大梯度，强迫 CMA-ES 关注
+        final_objective = min_score * 2.0
+        mode = "SURVIVAL (Fix Min)"
+    else:
+        # [发展模式] 所有视频都及格了，追求高平均分
+        # 加上 0.5 * min_score 是为了防守，防止为了平均分牺牲最低分
+        final_objective = mean_score + 0.5 * min_score
+        mode = "GROWTH (Max Mean)"
+
+    # 4. 打印详细日志
     print(f"[Trial {trial.number}] DONE.")
-    print(f"  Raw Avg: {mean_score:.4f}")
+    print(f"  Mode: {mode}")
     print(
-        f"  Negatives: {negative_count} seqs (Penalty: -{PENALTY_LAMBDA * penalty_sum:.4f})"
+        f"  Stats: Min={min_score:.4f} | Mean={mean_score:.4f} | Negatives={negative_count}"
     )
     print(f"  Final Objective: {final_objective:.4f}")
 
+    # 记录辅助数据供 Optuna Dashboard 分析
     trial.set_user_attr("raw_avg_bd", mean_score)
+    trial.set_user_attr("min_bd", min_score)
     trial.set_user_attr("negative_count", negative_count)
+
     return final_objective
 
 
