@@ -1,5 +1,6 @@
 import numpy as np
 import ctypes
+import math
 
 
 class FeatureExtractor:
@@ -95,9 +96,15 @@ class FeatureExtractor:
         """标准化映射到 [0, 1]"""
         norm = {}
         # 增加极小值保护，防止除零（虽然 NORM_REF 是常数）
-        norm["w1_var"] = min(raw_feats["var"] / self.NORM_REF["var"], 1.0)
-        norm["w2_sad"] = min(raw_feats["sad"] / self.NORM_REF["sad"], 1.0)
-        norm["w3_grad"] = min(raw_feats["grad"] / self.NORM_REF["grad"], 1.0)
+        norm["w1_var"] = min(
+            math.log1p(raw_feats["var"]) / math.log1p(self.NORM_REF["var"]), 1.0
+        )
+        norm["w2_sad"] = min(
+            math.log1p(raw_feats["sad"]) / math.log1p(self.NORM_REF["sad"]), 1.0
+        )
+        norm["w3_grad"] = min(
+            math.log1p(raw_feats["grad"]) / math.log1p(self.NORM_REF["grad"]), 1.0
+        )
         norm["w4_tex"] = norm["w3_grad"]
 
         # w5: 0.5 Spatial + 0.5 Temporal
