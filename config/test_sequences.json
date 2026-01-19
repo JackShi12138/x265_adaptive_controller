@@ -245,10 +245,10 @@
         "height": 720,
         "fps": 30,
         "bitrates": {
-            "Very Low": 400,
-            "Low": 800,
-            "Medium": 1600,
-            "High": 3200
+            "Very Low": 300,
+            "Low": 400,
+            "Medium": 500,
+            "High": 600
         }
     },
     "SlideShow_1280x720_20": {
@@ -257,10 +257,10 @@
         "height": 720,
         "fps": 20,
         "bitrates": {
-            "Very Low": 400,
-            "Low": 800,
-            "Medium": 1600,
-            "High": 3200
+            "Very Low": 100,
+            "Low": 130,
+            "Medium": 200,
+            "High": 300
         }
     }
 }

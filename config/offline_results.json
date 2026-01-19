@@ -361,38 +361,38 @@
     ],
     "SlideEditing_1280x720_30": [
         {
-            "bitrate": 424.05,
-            "vmaf": 93.927455
+            "bitrate": 215.57,
+            "vmaf": 83.565806
         },
         {
-            "bitrate": 812.78,
-            "vmaf": 97.007283
+            "bitrate": 320.88,
+            "vmaf": 90.724667
         },
         {
-            "bitrate": 1535.87,
-            "vmaf": 97.572016
+            "bitrate": 417.21,
+            "vmaf": 93.725239
         },
         {
-            "bitrate": 3273.32,
-            "vmaf": 97.66254
+            "bitrate": 524.55,
+            "vmaf": 95.175935
         }
     ],
     "SlideShow_1280x720_20": [
         {
-            "bitrate": 479.52,
-            "vmaf": 97.078988
+            "bitrate": 91.66,
+            "vmaf": 69.719199
         },
         {
-            "bitrate": 836.37,
-            "vmaf": 98.135747
+            "bitrate": 117.34,
+            "vmaf": 83.729715
         },
         {
-            "bitrate": 1604.08,
-            "vmaf": 98.368968
+            "bitrate": 149.16,
+            "vmaf": 87.974393
         },
         {
-            "bitrate": 2999.97,
-            "vmaf": 98.432355
+            "bitrate": 225.85,
+            "vmaf": 93.129555
         }
     ]
 }
