@@ -93,8 +93,9 @@ class FeatureExtractor:
     def _normalize_features(self, raw_feats):
         """标准化映射到 [0, 1]"""
         norm = {}
-        # 1. 线性归一化 (保持现状)
-        # 务必确认您的 NORM_REF 已经设置为了 {var: 12000, sad: 25, ...}
+        
+        # 1. 线性归一化 (保持现有逻辑)
+        # 务必确保您的 NORM_REF 已更新 (720p+: var=12000, sad=25)
         norm["w1_var"] = min(raw_feats["var"] / self.NORM_REF["var"], 1.0)
         norm["w2_sad"] = min(raw_feats["sad"] / self.NORM_REF["sad"], 1.0)
         norm["w3_grad"] = min(raw_feats["grad"] / self.NORM_REF["grad"], 1.0)
@@ -103,16 +104,17 @@ class FeatureExtractor:
         norm["w5_cplx"] = 0.5 * norm["w1_var"] + 0.5 * norm["w2_sad"]
         norm["avg_luma"] = raw_feats["luma"] / 255.0
 
-        # === [新增] SCV / 高危复杂区域检测 ===
-        # 逻辑：
-        # 1. 宽度 >= 600: 排除 BQSquare (416x240) 等低分辨率视频
-        # 2. 原始方差 > 3500: 排除 BQMall (~2200) 等自然高纹理视频
-        # 3. SlideEditing (~5200) 和 SlideShow (~8000+) 将会被命中
-
+        # === [新增] 基于数据的精准分诊逻辑 ===
+        # 目标：只命中 "SlideEditing" (高频+静止)，排除 "ChinaSpeed" (高频+运动)
         is_complex = 0.0
+        
+        # 阈值依据：
+        # 1. raw_var > 3500: 过滤掉 ChinaSpeed (Var~2900)
+        # 2. norm_sad < 0.25: 过滤掉 BQTerrace (SAD~0.29)
         if self.reader.width >= 600 and raw_feats["var"] > 3500:
-            is_complex = 1.0
-
+            if norm["w2_sad"] < 0.25:
+                is_complex = 1.0
+            
         norm["scv_flag"] = is_complex
 
         return norm
