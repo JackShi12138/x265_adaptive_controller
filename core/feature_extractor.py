@@ -93,15 +93,27 @@ class FeatureExtractor:
     def _normalize_features(self, raw_feats):
         """标准化映射到 [0, 1]"""
         norm = {}
-        # 增加极小值保护，防止除零（虽然 NORM_REF 是常数）
+        # 1. 线性归一化 (保持现状)
+        # 务必确认您的 NORM_REF 已经设置为了 {var: 12000, sad: 25, ...}
         norm["w1_var"] = min(raw_feats["var"] / self.NORM_REF["var"], 1.0)
         norm["w2_sad"] = min(raw_feats["sad"] / self.NORM_REF["sad"], 1.0)
         norm["w3_grad"] = min(raw_feats["grad"] / self.NORM_REF["grad"], 1.0)
         norm["w4_tex"] = norm["w3_grad"]
 
-        # w5: 0.5 Spatial + 0.5 Temporal
         norm["w5_cplx"] = 0.5 * norm["w1_var"] + 0.5 * norm["w2_sad"]
         norm["avg_luma"] = raw_feats["luma"] / 255.0
+
+        # === [新增] SCV / 高危复杂区域检测 ===
+        # 逻辑：
+        # 1. 宽度 >= 600: 排除 BQSquare (416x240) 等低分辨率视频
+        # 2. 原始方差 > 3500: 排除 BQMall (~2200) 等自然高纹理视频
+        # 3. SlideEditing (~5200) 和 SlideShow (~8000+) 将会被命中
+
+        is_complex = 0.0
+        if self.reader.width >= 600 and raw_feats["var"] > 3500:
+            is_complex = 1.0
+
+        norm["scv_flag"] = is_complex
 
         return norm
 

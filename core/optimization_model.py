@@ -54,28 +54,27 @@ class OptimizationModel:
         """
         new_params = {}
 
+        # [新增] 读取 SCV 标记
+        is_scv = features.get("scv_flag", 0.0) > 0.5
+
         for i_name in self.modules:
             param_key = self.p_map[i_name]
 
-            # 1. 计算求和项 Sum = Σ (Sigmoid(...) - 0.5)
+            # 1. 计算求和项 Sum
             sum_val = 0.0
 
             for j_name in self.modules:
                 if i_name == j_name:
                     continue
 
-                # 获取 j 的特征值 w_j
                 w_j_key = self.f_map[j_name]
                 w_j = features.get(w_j_key, 0.0)
 
-                # 获取系数 (Theta 已根据您的要求更新为大部分为 -1)
                 th_i = self.theta[i_name]
                 h_j = self.h_omega[j_name]
                 phi_ij = self.phi[i_name][j_name]
 
-                # 核心项 x
                 x = th_i * h_j * phi_ij * w_j
-
                 term = self._sigmoid_term(x) - 0.5
                 sum_val += term
 
@@ -83,24 +82,25 @@ class OptimizationModel:
             beta_i = self.hyperparams["beta"].get(i_name, 0.0)
             delta_p = beta_i * sum_val
 
+            # === [新增] 策略翻转逻辑 ===
+            # 如果是 SCV (文字/屏幕内容)，且当前模块是空间相关的 (VAQ, PsyRD)
+            # 我们希望翻转原本的"省码率"策略，改为"保画质"
+            if is_scv and i_name in ["VAQ", "PsyRD", "PsyRDOQ"]:
+                delta_p = -delta_p  # 简单粗暴：直接取反
+
             # 3. 应用调整 (Base + Delta)
             base_val = self.initial_params.get(param_key)
-
-            # 如果用户没提供初始值，对于核心优化参数，可以尝试给个默认值
-            # 或者直接跳过不调
             if base_val is None:
                 continue
 
             final_val = base_val + delta_p
 
-            # 4. 安全性检查
+            # 4. 安全性检查 (保持不变)
             constraint = self.constraints.get(param_key)
             if constraint:
                 max_step = constraint.get("max_step", 999.0)
                 delta_p_clamped = max(-max_step, min(max_step, delta_p))
-
                 final_val = base_val + delta_p_clamped
-
                 p_min = constraint.get("min", -999.0)
                 p_max = constraint.get("max", 999.0)
                 final_val = max(p_min, min(p_max, final_val))
