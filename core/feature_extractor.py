@@ -29,15 +29,15 @@ class FeatureExtractor:
 
         if width >= 1280:
             self.NORM_REF = {
-                "var": 12000.0,  # [重点] 必须够大，把自然视频压下去
-                "sad": 100.0,
-                "grad": 150.0,  # [重点] 必须够大，适应文字边缘
+                "var": 12000.0,  # [保持] 区分 SlideShow(0.73) 和自然视频
+                "sad": 25.0,  # [修改] 原100.0 -> 25.0 (修复 Class E 消失问题)
+                "grad": 150.0,  # [保持]
                 "luma": 255.0,
             }
         else:
             self.NORM_REF = {
-                "var": 5000.0,  # 即使是低分辨率，也要给够空间
-                "sad": 60.0,
+                "var": 5000.0,  # [保持] 适配 BQSquare(0.91)
+                "sad": 30.0,  # [修改] 原60.0 -> 30.0 (让 BasketballPass 从0.05提升到0.1)
                 "grad": 80.0,
                 "luma": 255.0,
             }
