@@ -93,7 +93,7 @@ class FeatureExtractor:
     def _normalize_features(self, raw_feats):
         """标准化映射到 [0, 1]"""
         norm = {}
-        
+
         # 1. 线性归一化 (保持现有逻辑)
         # 务必确保您的 NORM_REF 已更新 (720p+: var=12000, sad=25)
         norm["w1_var"] = min(raw_feats["var"] / self.NORM_REF["var"], 1.0)
@@ -107,14 +107,14 @@ class FeatureExtractor:
         # === [新增] 基于数据的精准分诊逻辑 ===
         # 目标：只命中 "SlideEditing" (高频+静止)，排除 "ChinaSpeed" (高频+运动)
         is_complex = 0.0
-        
+
         # 阈值依据：
         # 1. raw_var > 3500: 过滤掉 ChinaSpeed (Var~2900)
         # 2. norm_sad < 0.25: 过滤掉 BQTerrace (SAD~0.29)
         if self.reader.width >= 600 and raw_feats["var"] > 3500:
             if norm["w2_sad"] < 0.25:
                 is_complex = 1.0
-            
+
         norm["scv_flag"] = is_complex
 
         return norm

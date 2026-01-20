@@ -25,12 +25,18 @@ DEFAULT_DATASET_ROOT = "/home/shiyushen/x265_sequence/"
 
 # [训练集] 典型视频
 TRAINING_SET = [
+    # Class A (4K/2K) - 纹理丰富且平滑
+    "PeopleOnStreet_2560x1600_30_crop",
+    # Class B (1080p) - 运动与纹理的平衡
     "BasketballDrive_1920x1080_50",
-    "Cactus_1920x1080_50",
+    "BQTerrace_1920x1080_60",
+    # Class C (WVGA) - 低分辨率高纹理/高运动
+    "BasketballDrill_832x480_50",
+    "BQMall_832x480_60",
+    # Class D (QWVGA) - 极低分辨率测试
     "RaceHorses_416x240_30",
+    # Class E (720p) - 静态背景视频 (验证 SAD 过滤的鲁棒性)
     "FourPeople_1280x720_60",
-    "SlideEditing_1280x720_30",
-    "SlideShow_1280x720_20",
 ]
 
 
