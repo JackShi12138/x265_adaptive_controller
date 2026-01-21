@@ -39,11 +39,11 @@
 
     "phi_matrix": {
         "comment": "Inter-module Relevancy Matrix (Row i affected by Column j). Values from Paper Table III (Approx)",
-        "VAQ":     {"VAQ": 1.0, "CUTree": 0.3485, "PsyRD": -0.0771,  "PsyRDOQ": -0.0203,  "QComp": -0.1412},
-        "CUTree":  {"VAQ": 0.3485, "CUTree": 1.0, "PsyRD": 0.2311, "PsyRDOQ": -0.0670, "QComp": 0.2319},
-        "PsyRD":   {"VAQ": -0.0771,  "CUTree": 0.2311, "PsyRD": 1.0, "PsyRDOQ": 0.1519,  "QComp": -0.0157},
-        "PsyRDOQ": {"VAQ": -0.0203,  "CUTree": -0.0670, "PsyRD": 0.1519, "PsyRDOQ": 1.0,  "QComp": -0.0199},
-        "QComp":   {"VAQ": -0.1412,  "CUTree": 0.2319, "PsyRD": -0.0157, "PsyRDOQ": -0.0199,  "QComp": 1.0}
+        "VAQ":     {"VAQ": 0, "CUTree": 0.3485, "PsyRD": -0.0771,  "PsyRDOQ": -0.0203,  "QComp": -0.1412},
+        "CUTree":  {"VAQ": 0.3485, "CUTree": 0, "PsyRD": 0.2311, "PsyRDOQ": -0.0670, "QComp": 0.2319},
+        "PsyRD":   {"VAQ": -0.0771,  "CUTree": 0.2311, "PsyRD": 0, "PsyRDOQ": 0.1519,  "QComp": -0.0157},
+        "PsyRDOQ": {"VAQ": -0.0203,  "CUTree": -0.0670, "PsyRD": 0.1519, "PsyRDOQ": 0,  "QComp": -0.0199},
+        "QComp":   {"VAQ": -0.1412,  "CUTree": 0.2319, "PsyRD": -0.0157, "PsyRDOQ": -0.0199,  "QComp": 0}
     },
 
     "constraints": {
