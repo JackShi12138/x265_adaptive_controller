@@ -8,4 +8,4 @@ results/
 plots/
 best_hyperparams.json
 *.csv
-tpe_best_hyperparams.json
+best_hyperparams/
