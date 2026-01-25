@@ -181,4 +181,4 @@ def run_optimization():
 if __name__ == "__main__":
     run_optimization()
 
-# nohup python3 search/runner.py --trials 400 --workers 16 --reset > run.log 2>&1 &
+# nohup python3 search/runner.py --trials 400 --workers 10 --reset > run.log 2>&1 &

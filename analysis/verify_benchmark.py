@@ -20,7 +20,7 @@ CONFIG_DIR = os.path.join(PROJECT_ROOT, "config")
 
 # 1. 基准数据 (Anchor): x265 Slow Default
 # 请确保此文件存在，它决定了我们计算 BD-VMAF 的参照系
-BASELINE_JSON = os.path.join(CONFIG_DIR, "offline_results_91.json")
+BASELINE_JSON = os.path.join(CONFIG_DIR, "baseline_results_91.json")
 
 # 2. 序列元数据
 META_JSON = os.path.join(CONFIG_DIR, "test_sequences.json")
@@ -29,7 +29,10 @@ META_JSON = os.path.join(CONFIG_DIR, "test_sequences.json")
 INIT_JSON = os.path.join(CONFIG_DIR, "initial_params.json")
 
 # 4. 最优超参数 (Runner 的产出)
-BEST_PARAMS_JSON = os.path.join(PROJECT_ROOT, "best_hyperparams.json")
+BEST_PARAMS_JSON = os.path.join(
+    PROJECT_ROOT,
+    "/home/shiyushen/x265_adaptive_controller/best_hyperparams/best_hyperparams_0124.json",
+)
 
 # 5. 输出报告路径
 REPORT_CSV = os.path.join(PROJECT_ROOT, "analysis", "benchmark_report.csv")
@@ -90,7 +93,7 @@ def main():
             init_params_path=INIT_JSON,
             dataset_root=DEFAULT_DATASET_ROOT,
             lib_path=DEFAULT_LIB_PATH,
-            max_workers=16,  # 保持安全并发数
+            max_workers=10,  # 保持安全并发数
         )
     except Exception as e:
         print(f"[Fatal] Failed to init Evaluator: {e}")
