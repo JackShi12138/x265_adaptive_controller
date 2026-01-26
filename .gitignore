@@ -9,3 +9,4 @@ plots/
 best_hyperparams.json
 *.csv
 best_hyperparams/
+analysis_data/
