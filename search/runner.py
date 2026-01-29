@@ -278,4 +278,4 @@ if __name__ == "__main__":
 
 # === [运行示例] ===
 # 重新搜索：nohup python3 search/runner.py --trials 400 --workers 10 --reset > run.log 2>&1 &
-# 继续搜索：nohup python3 search/runner.py --trials 500 --workers 10 > run.log 2>&1 &
+# 继续搜索：nohup python3 search/runner.py --trials 500 --workers 28 > run.log 2>&1 &

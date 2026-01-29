@@ -8,5 +8,7 @@ results/
 plots/
 best_hyperparams.json
 *.csv
+*.png
+*.pdf
 best_hyperparams/
 analysis_data/
