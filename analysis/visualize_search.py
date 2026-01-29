@@ -12,7 +12,7 @@ PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
 sys.path.append(PROJECT_ROOT)
 
 # === 配置 ===
-DB_PATH = os.path.join(PROJECT_ROOT, "search_storage.db")
+DB_PATH = os.path.join(PROJECT_ROOT, "best_hyperparams/search_storage_0124.db")
 STORAGE_URL = f"sqlite:///{DB_PATH}"
 STUDY_NAME = "x265_adaptive_optimization"
 OUTPUT_DIR = os.path.join(PROJECT_ROOT, "analysis", "plots")

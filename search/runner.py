@@ -1,6 +1,8 @@
 import os
 import sys
 import json
+import logging
+import numpy as np  # [新增] 用于计算标准差
 import optuna
 import argparse
 from datetime import datetime
@@ -12,6 +14,7 @@ sys.path.append(PROJECT_ROOT)
 
 from search.evaluator import ParallelEvaluator
 
+# === 全局配置 ===
 DB_PATH = os.path.join(PROJECT_ROOT, "search_storage.db")
 STORAGE_URL = f"sqlite:///{DB_PATH}"
 STUDY_NAME = "x265_adaptive_optimization"
@@ -20,27 +23,88 @@ ANCHOR_JSON = os.path.join(CONFIG_DIR, "offline_results_91.json")
 META_JSON = os.path.join(CONFIG_DIR, "test_sequences.json")
 INIT_JSON = os.path.join(CONFIG_DIR, "initial_params.json")
 BEST_PARAMS_JSON = os.path.join(PROJECT_ROOT, "best_hyperparams.json")
+SEARCH_LOG_FILE = os.path.join(
+    PROJECT_ROOT, "search_progress.log"
+)  # [新增] 独立日志路径
+
 DEFAULT_LIB_PATH = "/home/shiyushen/program/x265_4.0/libx265.so"
 DEFAULT_DATASET_ROOT = "/home/shiyushen/x265_sequence/"
 
-# [训练集] 典型视频
+# [训练集]
 TRAINING_SET = [
-    # Class A: 4K 基准，纹理细腻
     "PeopleOnStreet_2560x1600_30_crop",
-    # Class B: 困难样本 Cactus (混合纹理) + 稳定样本 BQTerrace
-    "Cactus_1920x1080_50",  # [新增] 替换 BasketballDrive
+    "Cactus_1920x1080_50",
     "BQTerrace_1920x1080_60",
-    # Class C: 困难样本集中营 (高纹理/高运动)
-    "BasketballDrill_832x480_50",  # [保留] 重点攻克
-    "PartyScene_832x480_50",  # [新增] 重点攻克噪声纹理
-    # Class D: 低分辨率基准
+    "BasketballDrill_832x480_50",
+    "PartyScene_832x480_50",
     "RaceHorses_416x240_30",
-    # Class E: 困难样本 KristenAndSara (静止背景)
-    "KristenAndSara_1280x720_60",  # [新增] 替换 FourPeople
+    "KristenAndSara_1280x720_60",
 ]
 
 
-def objective(trial, evaluator):
+# === [新增] 初始化独立 Logger ===
+def setup_search_logger():
+    logger = logging.getLogger("SearchMonitor")
+    logger.setLevel(logging.INFO)
+
+    # 防止重复添加 Handler
+    if not logger.handlers:
+        # File Handler: 只写到 search_progress.log，不写到控制台(run.log)
+        fh = logging.FileHandler(SEARCH_LOG_FILE, mode="w", encoding="utf-8")
+        formatter = logging.Formatter(
+            "%(asctime)s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
+
+    return logger
+
+
+search_logger = setup_search_logger()
+
+
+# === [新增] 参数波动统计函数 ===
+def analyze_parameter_variance(study, window=20):
+    """计算最近 window 次试验的参数标准差，判断收敛趋势"""
+    if len(study.trials) < window:
+        return "Not enough data"
+
+    # 获取最近完成的 trails
+    completed_trials = [
+        t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE
+    ]
+    recent_trials = completed_trials[-window:]
+
+    if not recent_trials:
+        return "No complete trials"
+
+    # 提取参数矩阵
+    param_keys = [
+        "a",
+        "b",
+        "beta_VAQ",
+        "beta_CUTree",
+        "beta_PsyRD",
+        "beta_PsyRDOQ",
+        "beta_QComp",
+    ]
+    variances = {}
+
+    for key in param_keys:
+        values = [t.params.get(key, 0) for t in recent_trials]
+        std_dev = np.std(values)
+        mean_val = np.mean(values)
+        # 归一化波动率 (Std / Mean)，处理量纲不同
+        rel_std = std_dev / (abs(mean_val) + 1e-6)
+        variances[key] = f"{std_dev:.2f}({rel_std:.1%})"
+
+    # 格式化输出
+    # 重点关注几个波动最大的
+    report = " | ".join([f"{k}:{v}" for k, v in variances.items()])
+    return report
+
+
+def objective(trial, evaluator, study):  # [修改] 传入 study 用于统计
     # 1. 定义搜索空间
     param_a = trial.suggest_float("a", 0.5, 5.0)
     param_b = trial.suggest_float("b", 0.5, 5.0)
@@ -62,49 +126,66 @@ def objective(trial, evaluator):
         },
     }
 
-    print(
-        f"\n[Trial {trial.number}] Evaluator starting with: {json.dumps(hyperparams)}"
-    )
+    # 简略日志到控制台 (保持心跳)
+    print(f"[Trial {trial.number}] Processing...")
 
     # 2. 执行评估
     mean_score, details, crash_report, stats = evaluator.evaluate_batch(hyperparams)
 
     if mean_score == -9999.0:
-        print(f"[Trial {trial.number}] Failed.")
+        search_logger.error(
+            f"[Trial {trial.number}] FAILED. Params: {json.dumps(hyperparams)}"
+        )
         raise optuna.TrialPruned("Eval Failed")
 
-    # === 3. 核心评分逻辑 (Min-Max 策略) ===
+    # 3. 评分逻辑
     scores = [info.get("bd_vmaf", 0.0) for info in details.values()]
     min_score = min(scores)
-    mean_score = sum(scores) / len(scores)
-
-    # 统计有多少个负收益，方便看日志
+    mean_val = sum(scores) / len(scores)
     negative_count = sum(1 for s in scores if s < 0)
 
-    # 阈值 -0.09：允许轻微的负波动，但不能太离谱
-    THRESHOLD = -0.09
+    THRESHOLD = -0.1
 
     if min_score < THRESHOLD:
-        # [生存模式] 有严重短板，全力消除短板
-        # 放大梯度，强迫 CMA-ES 关注
         final_objective = min_score * 2.0
-        mode = "SURVIVAL (Fix Min)"
+        mode = "SURVIVAL"
     else:
-        # [发展模式] 所有视频都及格了，追求高平均分
-        # 加上 0.5 * min_score 是为了防守，防止为了平均分牺牲最低分
-        final_objective = mean_score + 0.5 * min_score
-        mode = "GROWTH (Max Mean)"
+        final_objective = mean_val + 0.5 * min_score
+        mode = "GROWTH"
 
-    # 4. 打印详细日志
-    print(f"[Trial {trial.number}] DONE.")
-    print(f"  Mode: {mode}")
-    print(
-        f"  Stats: Min={min_score:.4f} | Mean={mean_score:.4f} | Negatives={negative_count}"
+    # === [关键修改] 写入独立日志文件 ===
+    # 计算当前是否打破了历史最佳记录
+    try:
+        # 注意：study.best_value 可能不包含当前正在跑的这一轮（取决于Optuna版本和并发更新时机）
+        # 所以我们需要比较一下
+        history_best = study.best_value
+        global_best_score = max(history_best, final_objective)
+    except ValueError:
+        # 第一轮
+        global_best_score = final_objective
+
+    is_new_best = final_objective >= global_best_score
+
+    marker = "★ NEW BEST ★" if is_new_best else ""
+
+    # 构建详细日志条目
+    log_msg = (
+        f"[Trial {trial.number}] {marker} | Best So Far: {global_best_score:.4f}\n"
+        f"  Mode: {mode} (Obj: {final_objective:.4f})\n"
+        f"  Metrics: Mean={mean_val:.4f} | Min={min_score:.4f} | Negs={negative_count}\n"
+        f"  Params: a={param_a:.6f}, b={param_b:.6f}, "
+        f"VAQ={beta_vaq:.6f}, CUTree={beta_cutree:.6f}, PsyRD={beta_psyrd:.6f}, PsyRDOQ={beta_psyrdoq:.6f}, QComp={beta_qcomp:.6f}\n"
     )
-    print(f"  Final Objective: {final_objective:.4f}")
 
-    # 记录辅助数据供 Optuna Dashboard 分析
-    trial.set_user_attr("raw_avg_bd", mean_score)
+    # 每 10 轮分析一次参数收敛情况
+    if trial.number > 0 and trial.number % 10 == 0:
+        variance_report = analyze_parameter_variance(study)
+        log_msg += f"  [Convergence Stats (Last 20)]: {variance_report}\n"
+
+    search_logger.info(log_msg)
+
+    # 记录辅助数据
+    trial.set_user_attr("raw_avg_bd", mean_val)
     trial.set_user_attr("min_bd", min_score)
     trial.set_user_attr("negative_count", negative_count)
 
@@ -114,7 +195,7 @@ def objective(trial, evaluator):
 def run_optimization():
     parser = argparse.ArgumentParser()
     parser.add_argument("--trials", type=int, default=400)
-    parser.add_argument("--workers", type=int, default=10)  # 保持 CPU 高效利用
+    parser.add_argument("--workers", type=int, default=10)
     parser.add_argument("--dataset", default=DEFAULT_DATASET_ROOT)
     parser.add_argument("--lib", default=DEFAULT_LIB_PATH)
     parser.add_argument("--reset", action="store_true")
@@ -122,9 +203,14 @@ def run_optimization():
     args = parser.parse_args()
 
     target_seqs = None if args.full_set else TRAINING_SET
-    print(
-        f"Search Strategy: NO PRUNING, {'FULL SET' if args.full_set else 'TRAINING SUBSET'}, FULL FRAMES."
+
+    # 启动日志
+    search_logger.info("=" * 60)
+    search_logger.info(
+        f"SESSION START: trials={args.trials}, workers={args.workers}, reset={args.reset}"
     )
+    search_logger.info(f"Dataset: {args.dataset}")
+    search_logger.info("=" * 60)
 
     evaluator = ParallelEvaluator(
         anchor_json_path=ANCHOR_JSON,
@@ -134,11 +220,11 @@ def run_optimization():
         lib_path=args.lib,
         max_workers=args.workers,
         target_seqs=target_seqs,
-        # [移除] max_frames
     )
 
     if args.reset and os.path.exists(DB_PATH):
         os.remove(DB_PATH)
+        search_logger.warning("Database reset!")
 
     sampler = CmaEsSampler(restart_strategy="ipop", n_startup_trials=10)
     study = optuna.create_study(
@@ -146,19 +232,28 @@ def run_optimization():
         storage=STORAGE_URL,
         direction="maximize",
         load_if_exists=True,
-        sampler=sampler,  # 传入 sampler
+        sampler=sampler,
     )
 
     try:
-        study.optimize(lambda trial: objective(trial, evaluator), n_trials=args.trials)
+        # 使用 lambda 将 study 传给 objective
+        study.optimize(
+            lambda trial: objective(trial, evaluator, study), n_trials=args.trials
+        )
     except KeyboardInterrupt:
+        search_logger.warning("Optimization interrupted by user.")
         print("\nInterrupted.")
+    except Exception as e:
+        search_logger.exception(f"Fatal error: {e}")
+        raise
     finally:
         if len(study.trials) > 0:
             best_trial = study.best_trial
-            print(f"\nBest Penalized Score: {best_trial.value:.4f}")
-            print(f"Raw Avg Score: {best_trial.user_attrs.get('raw_avg_bd', 'N/A')}")
+            # 最终结果写入日志
+            search_logger.info(f"SESSION END. Best Score: {best_trial.value:.4f}")
+            search_logger.info(f"Best Params: {json.dumps(best_trial.params)}")
 
+            # 保存到 JSON
             final_best = {
                 "a": best_trial.params["a"],
                 "b": best_trial.params["b"],
@@ -181,4 +276,6 @@ def run_optimization():
 if __name__ == "__main__":
     run_optimization()
 
-# nohup python3 search/runner.py --trials 400 --workers 10 --reset > run.log 2>&1 &
+# === [运行示例] ===
+# 重新搜索：nohup python3 search/runner.py --trials 400 --workers 10 --reset > run.log 2>&1 &
+# 继续搜索：nohup python3 search/runner.py --trials 500 --workers 10 > run.log 2>&1 &
