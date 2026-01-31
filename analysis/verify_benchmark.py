@@ -31,7 +31,7 @@ INIT_JSON = os.path.join(CONFIG_DIR, "initial_params.json")
 # 4. 最优超参数 (Runner 的产出)
 BEST_PARAMS_JSON = os.path.join(
     PROJECT_ROOT,
-    "/home/shiyushen/x265_adaptive_controller/best_hyperparams/best_hyperparams_0124.json",
+    "best_hyperparams.json",
 )
 
 # 5. 输出报告路径

@@ -19,18 +19,18 @@ FPS = 60
 # 配置文件路径
 MODEL_CONFIG_PATH = "config/model_config.json"
 INITIAL_PARAMS_PATH = "config/initial_params.json"
-PROFILE = "High"  # 使用 Medium 档位作为基准
+PROFILE = "Low"  # 使用 Medium 档位作为基准
 
 # [Updated] 使用您之前搜索出的最优超参数
 BEST_HYPERPARAMS = {
-    "a": 3.044929438592169,
-    "b": 2.36521356355403,
+    "a": 3.4334777984915212,
+    "b": 2.4523922821071436,
     "beta": {
-        "VAQ": 6.317753857221986,
-        "CUTree": 3.0987080653981685,
-        "PsyRD": 3.1385016893339084,
-        "PsyRDOQ": 6.070245329186924,
-        "QComp": 7.167432624475883,
+        "VAQ": 2.29640051109266,
+        "CUTree": 6.511506268859984,
+        "PsyRD": 5.174069826859602,
+        "PsyRDOQ": 6.417653537154299,
+        "QComp": 6.971636320383645,
     },
 }
 
