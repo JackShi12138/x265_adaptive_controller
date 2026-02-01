@@ -46,7 +46,6 @@ def setup_search_logger():
     logger.setLevel(logging.INFO)
 
     if not logger.handlers:
-        # 使用 'w' 模式覆盖旧日志，保持清爽 (如果需要保留请改回 'a')
         fh = logging.FileHandler(SEARCH_LOG_FILE, mode="w", encoding="utf-8")
         formatter = logging.Formatter(
             "%(asctime)s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
@@ -62,11 +61,9 @@ search_logger = setup_search_logger()
 
 # === 参数波动统计函数 ===
 def analyze_parameter_variance(study, window=20):
-    """计算最近 window 次试验的参数标准差，判断收敛趋势"""
     if len(study.trials) < window:
         return "Not enough data"
 
-    # 获取最近完成的 trails
     completed_trials = [
         t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE
     ]
@@ -75,7 +72,6 @@ def analyze_parameter_variance(study, window=20):
     if not recent_trials:
         return "No complete trials"
 
-    # 提取参数矩阵
     param_keys = [
         "a",
         "b",
@@ -91,24 +87,23 @@ def analyze_parameter_variance(study, window=20):
         values = [t.params.get(key, 0) for t in recent_trials]
         std_dev = np.std(values)
         mean_val = np.mean(values)
-        # 归一化波动率 (Std / Mean)，处理量纲不同
         rel_std = std_dev / (abs(mean_val) + 1e-6)
         variances[key] = f"{std_dev:.2f}({rel_std:.1%})"
 
-    # 格式化输出
     return " | ".join([f"{k}:{v}" for k, v in variances.items()])
 
 
 def objective(trial, evaluator, study):
-    # 1. 定义搜索空间
-    # 注意：即便加了正则化，搜索范围依然保持宽泛，让算法自己收敛
+    # === 1. 搜索空间限制 (物理约束) ===
     param_a = trial.suggest_float("a", 0.5, 5.0)
-    param_b = trial.suggest_float("b", 0.5, 5.0)
-    beta_vaq = trial.suggest_float("beta_VAQ", 0.0, 10.0)
-    beta_cutree = trial.suggest_float("beta_CUTree", 0.0, 10.0)
-    beta_psyrd = trial.suggest_float("beta_PsyRD", 0.0, 10.0)
-    beta_psyrdoq = trial.suggest_float("beta_PsyRDOQ", 0.0, 10.0)
-    beta_qcomp = trial.suggest_float("beta_QComp", 0.0, 10.0)
+    param_b = trial.suggest_float("b", 0.5, 2.0)  # 限制斜率，防止开关效应
+
+    # 限制 Beta 上限，防止过激调节
+    beta_vaq = trial.suggest_float("beta_VAQ", 0.0, 4.0)
+    beta_cutree = trial.suggest_float("beta_CUTree", 0.0, 4.0)
+    beta_psyrd = trial.suggest_float("beta_PsyRD", 0.0, 4.0)
+    beta_psyrdoq = trial.suggest_float("beta_PsyRDOQ", 0.0, 4.0)
+    beta_qcomp = trial.suggest_float("beta_QComp", 0.0, 4.0)
 
     hyperparams = {
         "a": param_a,
@@ -133,69 +128,72 @@ def objective(trial, evaluator, study):
         )
         raise optuna.TrialPruned("Eval Failed")
 
-    # 3. 基础评分逻辑
+    # 3. 计算基础指标
     scores = [info.get("bd_vmaf", 0.0) for info in details.values()]
     min_score = min(scores)
     mean_val = sum(scores) / len(scores)
     negative_count = sum(1 for s in scores if s < 0)
 
-    # [策略调整] 放宽阈值到 -0.1，帮助算法更容易进入发展模式
-    THRESHOLD = -0.1
+    # === [核心修改] 软化边界策略 (Soft Barrier) ===
+    # 目标：最大化 (平均分 + 0.5 * 最低分)
+    # 但如果最低分低于安全线，施加平滑的平方惩罚
 
-    if min_score < THRESHOLD:
-        raw_objective = min_score * 2.0
-        mode = "SURVIVAL"
-    else:
-        raw_objective = mean_val + 0.5 * min_score
-        mode = "GROWTH"
+    base_objective = mean_val + 0.5 * min_score
 
-    # === 4. [核心] L2 正则化 (防止参数过大导致开关效应) ===
-    # 惩罚系数 lambda。0.002 是一个经验值，能在保持性能的同时有效抑制参数膨胀
+    SAFE_LIMIT = -0.10  # 安全线，高于此线无惩罚
+    barrier_penalty = 0.0
+
+    for s in scores:
+        if s < SAFE_LIMIT:
+            # 平方惩罚：越过安全线越多，罚得越重（梯度连续）
+            # 权重 5.0 是经验值，保证严重越界时罚分足够痛
+            barrier_penalty += 5.0 * ((s - SAFE_LIMIT) ** 2)
+
+    # === 4. L2 正则化 (抑制参数膨胀) ===
     REG_LAMBDA = 0.002
-
-    # 计算参数的平方和 (Magnitude)
-    # 重点惩罚 b (斜率) 和 beta (增益)，迫使它们保持在较小的线性区
     param_magnitude = (param_b**2) + sum(v**2 for v in hyperparams["beta"].values())
+    l2_penalty = REG_LAMBDA * param_magnitude
 
-    # 计算惩罚分
-    penalty = REG_LAMBDA * param_magnitude
+    # 最终得分 = 基础分 - 越界惩罚 - 参数大惩罚
+    final_objective = base_objective - barrier_penalty - l2_penalty
 
-    # 从总分中扣除 (最大化问题，所以是减去惩罚)
-    penalized_objective = raw_objective - penalty
+    # 确定模式名称 (用于日志显示)
+    if barrier_penalty > 0.1:
+        mode = "UNSAFE"  # 越界严重
+    elif barrier_penalty > 0:
+        mode = "RISKY"  # 轻微越界
+    else:
+        mode = "SAFE"  # 完全在安全区
 
     # === 5. 日志记录 ===
-    # 获取历史最佳 (用于日志对比)
     try:
         history_best = study.best_value
-        global_best = max(history_best, penalized_objective)
+        global_best = max(history_best, final_objective)
     except ValueError:
-        global_best = penalized_objective
+        global_best = final_objective
 
-    is_new_best = penalized_objective >= global_best
+    is_new_best = final_objective >= global_best
     marker = "★ NEW BEST ★" if is_new_best else ""
 
-    # 构建日志
     log_msg = (
         f"[Trial {trial.number}] {marker}\n"
-        f"  Mode: {mode} | Obj: {penalized_objective:.4f} (Raw: {raw_objective:.4f} - Reg: {penalty:.4f}) | Best So Far: {global_best:.4f}\n"
+        f"  Mode: {mode} | Obj: {final_objective:.4f} (Base: {base_objective:.4f} - Barrier: {barrier_penalty:.4f} - L2: {l2_penalty:.4f})\n"
         f"  Metrics: Mean={mean_val:.4f} | Min={min_score:.4f} | Negs={negative_count}\n"
         f"  Params: a={param_a:.4f}, b={param_b:.4f} | "
         f"VAQ={beta_vaq:.4f}, CUTree={beta_cutree:.4f}, RD={beta_psyrd:.4f}, RDOQ={beta_psyrdoq:.4f}, QComp={beta_qcomp:.4f}\n"
     )
 
-    # 每 10 轮分析一次收敛情况
     if trial.number > 0 and trial.number % 10 == 0:
         variance_report = analyze_parameter_variance(study)
         log_msg += f"  [Convergence Stats (Last 20)]: {variance_report}\n"
 
     search_logger.info(log_msg)
 
-    # 记录辅助数据
     trial.set_user_attr("raw_avg_bd", mean_val)
     trial.set_user_attr("min_bd", min_score)
-    trial.set_user_attr("penalty", penalty)
+    trial.set_user_attr("barrier_penalty", barrier_penalty)
 
-    return penalized_objective
+    return final_objective
 
 
 def run_optimization():
@@ -214,7 +212,9 @@ def run_optimization():
     search_logger.info(
         f"SESSION START: trials={args.trials}, workers={args.workers}, reset={args.reset}"
     )
-    search_logger.info(f"Regularization: L2 (Lambda=0.002)")
+    search_logger.info(
+        f"Policy: Soft Barrier (Limit -0.10) + Restricted Space + Seed + L2 Reg"
+    )
     search_logger.info("=" * 60)
 
     evaluator = ParallelEvaluator(
@@ -228,10 +228,15 @@ def run_optimization():
     )
 
     if args.reset and os.path.exists(DB_PATH):
-        os.remove(DB_PATH)
-        search_logger.warning("Database reset!")
+        try:
+            os.remove(DB_PATH)
+            search_logger.warning("Database reset success!")
+        except OSError as e:
+            search_logger.error(f"Error resetting DB: {e}")
 
-    sampler = CmaEsSampler(restart_strategy="ipop", n_startup_trials=10)
+    # 减小初始步长 sigma0，防止一开始就跳出好区域
+    sampler = CmaEsSampler(restart_strategy="ipop", n_startup_trials=5, sigma0=0.5)
+
     study = optuna.create_study(
         study_name=STUDY_NAME,
         storage=STORAGE_URL,
@@ -239,6 +244,20 @@ def run_optimization():
         load_if_exists=True,
         sampler=sampler,
     )
+
+    # 注入修正后的优良种子
+    if args.reset or len(study.trials) == 0:
+        known_good_params = {
+            "a": 2.5375,
+            "b": 1.9242,
+            "beta_VAQ": 2.7898,
+            "beta_CUTree": 3.5,  # 手动削减到合规范围
+            "beta_PsyRD": 4.0,  # 手动削减到合规范围 (原8.3)
+            "beta_PsyRDOQ": 2.6921,
+            "beta_QComp": 3.0856,
+        }
+        search_logger.info(f"Injecting seed params: {json.dumps(known_good_params)}")
+        study.enqueue_trial(known_good_params)
 
     try:
         study.optimize(
@@ -253,27 +272,23 @@ def run_optimization():
     finally:
         if len(study.trials) > 0:
             best_trial = study.best_trial
-            search_logger.info(
-                f"SESSION END. Best Penalized Score: {best_trial.value:.4f}"
-            )
+            search_logger.info(f"SESSION END. Best Objective: {best_trial.value:.4f}")
             search_logger.info(f"Best Params: {json.dumps(best_trial.params)}")
 
             final_best = {
                 "a": best_trial.params["a"],
                 "b": best_trial.params["b"],
-                "beta": {
-                    "VAQ": best_trial.params["beta_VAQ"],
-                    "CUTree": best_trial.params["beta_CUTree"],
-                    "PsyRD": best_trial.params["beta_PsyRD"],
-                    "PsyRDOQ": best_trial.params["beta_PsyRDOQ"],
-                    "QComp": best_trial.params["beta_QComp"],
-                },
+                "beta": best_trial.params.copy(),  # 简单处理
                 "score": best_trial.value,
-                "raw_score": best_trial.user_attrs.get(
-                    "raw_avg_bd", 0.0
-                ),  # 记录未正则化的原始分
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
+            # 清理一下 beta 的结构以便保存
+            del final_best["beta"]["a"]
+            del final_best["beta"]["b"]
+            final_best["beta"] = {
+                k.replace("beta_", ""): v for k, v in final_best["beta"].items()
+            }
+
             with open(BEST_PARAMS_JSON, "w") as f:
                 json.dump(final_best, f, indent=4)
             print(f"Saved to {BEST_PARAMS_JSON}")
@@ -285,3 +300,5 @@ if __name__ == "__main__":
 # === [运行示例] ===
 # 重新搜索：nohup python3 search/runner.py --trials 400 --workers 10 --reset > run.log 2>&1 &
 # 继续搜索：nohup python3 search/runner.py --trials 500 --workers 28 > run.log 2>&1 &
+# 终止搜索：pkill -f "search/runner.py"
+# 查看PID： ps -ef | grep search/runner.py
