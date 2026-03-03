@@ -12,19 +12,19 @@ DECODER_EXE = "/home/shiyushen/program/HM/TAppDecoderStatic"
 # 路径基于你昨天的 plot_cu_boxmap.py 进行了对齐
 EXPERIMENTS = {
     "Baseline (Slow)": {
-        "bitstream": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/RaceHorses_832x480_30/slow/output.hevc",
-        "trace_out": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/RaceHorses_832x480_30/slow/trace_baseline.txt",
-        "coeff_out": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/RaceHorses_832x480_30/slow/coeffs_baseline.txt",
+        "bitstream": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/BasketballPass_416x240_50/slow/output.hevc",
+        "trace_out": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/BasketballPass_416x240_50/slow/trace_baseline.txt",
+        "coeff_out": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/BasketballPass_416x240_50/slow/coeffs_baseline.txt",
     },
     "Offline Opt.": {
-        "bitstream": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/RaceHorses_832x480_30/offline/output.hevc",
-        "trace_out": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/RaceHorses_832x480_30/offline/trace_offline.txt",
-        "coeff_out": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/RaceHorses_832x480_30/offline/coeffs_offline.txt",
+        "bitstream": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/BasketballPass_416x240_50/offline/output.hevc",
+        "trace_out": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/BasketballPass_416x240_50/offline/trace_offline.txt",
+        "coeff_out": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/BasketballPass_416x240_50/offline/coeffs_offline.txt",
     },
     "Online (Proposed)": {
-        "bitstream": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/RaceHorses_832x480_30/online/output.hevc",
-        "trace_out": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/RaceHorses_832x480_30/online/trace_online.txt",
-        "coeff_out": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/RaceHorses_832x480_30/online/coeffs_online.txt",
+        "bitstream": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/BasketballPass_416x240_50/online/output.hevc",
+        "trace_out": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/BasketballPass_416x240_50/online/trace_online.txt",
+        "coeff_out": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/BasketballPass_416x240_50/online/coeffs_online.txt",
     },
 }
 

@@ -19,7 +19,7 @@ DB_PATH = os.path.join(PROJECT_ROOT, "search_storage.db")
 STORAGE_URL = f"sqlite:///{DB_PATH}"
 STUDY_NAME = "x265_adaptive_optimization"
 CONFIG_DIR = os.path.join(PROJECT_ROOT, "config")
-ANCHOR_JSON = os.path.join(CONFIG_DIR, "offline_results_91.json")
+ANCHOR_JSON = os.path.join(CONFIG_DIR, "offline_results_172.json")
 META_JSON = os.path.join(CONFIG_DIR, "test_sequences.json")
 INIT_JSON = os.path.join(CONFIG_DIR, "initial_params.json")
 BEST_PARAMS_JSON = os.path.join(PROJECT_ROOT, "best_hyperparams.json")
@@ -177,7 +177,7 @@ def objective(trial, evaluator, study):
 
     log_msg = (
         f"[Trial {trial.number}] {marker}\n"
-        f"  Mode: {mode} | Obj: {final_objective:.4f} (Base: {base_objective:.4f} - Barrier: {barrier_penalty:.4f} - L2: {l2_penalty:.4f})\n"
+        f"  Mode: {mode} | Obj: {final_objective:.4f} (Base: {base_objective:.4f} - Barrier: {barrier_penalty:.4f} - L2: {l2_penalty:.4f}) | Global Best: {global_best:.4f}\n"
         f"  Metrics: Mean={mean_val:.4f} | Min={min_score:.4f} | Negs={negative_count}\n"
         f"  Params: a={param_a:.4f}, b={param_b:.4f} | "
         f"VAQ={beta_vaq:.4f}, CUTree={beta_cutree:.4f}, RD={beta_psyrd:.4f}, RDOQ={beta_psyrdoq:.4f}, QComp={beta_qcomp:.4f}\n"
@@ -248,13 +248,13 @@ def run_optimization():
     # 注入修正后的优良种子
     if args.reset or len(study.trials) == 0:
         known_good_params = {
-            "a": 2.5375,
-            "b": 1.9242,
-            "beta_VAQ": 2.7898,
-            "beta_CUTree": 3.5,  # 手动削减到合规范围
-            "beta_PsyRD": 4.0,  # 手动削减到合规范围 (原8.3)
-            "beta_PsyRDOQ": 2.6921,
-            "beta_QComp": 3.0856,
+            "a": 3.5477793708144474,
+            "b": 0.7790289712434977,
+            "beta_VAQ": 1.8130634860968102,
+            "beta_CUTree": 0.6621784543280014,
+            "beta_PsyRD": 1.203856231361916,
+            "beta_PsyRDOQ": 0.5155886213328056,
+            "beta_QComp": 0.9027890370636934,
         }
         search_logger.info(f"Injecting seed params: {json.dumps(known_good_params)}")
         study.enqueue_trial(known_good_params)

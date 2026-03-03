@@ -18,16 +18,19 @@ if sys.platform.startswith("win"):
 # 实验配置
 EXPERIMENTS = {
     "Baseline (Slow)": {
-        "bitstream": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/ParkScene_1920x1080_24/slow/output.hevc",
-        "trace_file": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/ParkScene_1920x1080_24/slow/trace_baseline.txt",
+        "bitstream": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/ParkScene_1920x1080_24/slow/output.hevc",
+        "trace_file": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/ParkScene_1920x1080_24/slow/trace_baseline.txt",
+        "coeff_out": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/ParkScene_1920x1080_24/slow/coeffs_baseline.txt",
     },
     "Offline Opt.": {
-        "bitstream": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/ParkScene_1920x1080_24/offline/output.hevc",
-        "trace_file": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/ParkScene_1920x1080_24/offline/trace_offline.txt",
+        "bitstream": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/ParkScene_1920x1080_24/offline/output.hevc",
+        "trace_file": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/ParkScene_1920x1080_24/offline/trace_offline.txt",
+        "coeff_out": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/ParkScene_1920x1080_24/offline/coeffs_offline.txt",
     },
     "Online (Proposed)": {
-        "bitstream": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/ParkScene_1920x1080_24/online/output.hevc",
-        "trace_file": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/ParkScene_1920x1080_24/online/trace_online.txt",
+        "bitstream": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/ParkScene_1920x1080_24/online/output.hevc",
+        "trace_file": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/ParkScene_1920x1080_24/online/trace_online.txt",
+        "coeff_out": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/ParkScene_1920x1080_24/online/coeffs_online.txt",
     },
 }
 
@@ -214,12 +217,6 @@ def plot_final_chart(df):
     )
 
     # 设置标题和标签
-    plt.title(
-        "Fig. B: Hierarchical QP Modulation across CU Depths",
-        fontsize=14,
-        weight="bold",
-        pad=15,
-    )
     plt.ylabel("Quantization Parameter (QP)", fontsize=12)
     plt.xlabel("CU Depth & Texture Complexity", fontsize=12)
 
@@ -227,8 +224,8 @@ def plot_final_chart(df):
     plt.legend(title="Algorithm", loc="lower right", frameon=True, framealpha=0.9)
 
     plt.tight_layout()
-    plt.savefig("Fig_B_Result_Clean.png", dpi=300)
-    print("✅ 图表已保存: Fig_B_Result_Clean.png")
+    plt.savefig("Fig_B_Result_Clean.pdf", dpi=300)
+    print("✅ 图表已保存: Fig_B_Result_Clean.pdf")
     # plt.show()
 
 

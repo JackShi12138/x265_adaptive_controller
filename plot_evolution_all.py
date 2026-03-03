@@ -9,10 +9,14 @@ from scipy.signal import find_peaks
 INPUT_CSV = "frame_level_data.csv"
 MODEL_CONFIG_PATH = "config/model_config.json"
 
-# [核心配置] 选择要展示的参数 (建议 psy-rd 或 aq-strength)
-TARGET_PARAM = "cutree-strength"  # 可选: "psy-rd", "aq-strength", "cutree-strength"
-TARGET_PARAM_COL = "param_cutree"  # 对应 CSV 中的列名
-BASE_PARAM_COL = "base_cutree"
+# [核心修改] 定义要展示的所有5个参数 (Label, Target Col, Base Col, Color)
+TARGET_PARAMS = [
+    ("Psy-RD", "param_psy_rd", "base_psy_rd", "#D62728"),  # 红色
+    ("Psy-RDOQ", "param_psy_rdoq", "base_psy_rdoq", "#FF7F0E"),  # 橙色
+    ("AQ-Strength", "param_aq", "base_aq", "#2CA02C"),  # 绿色
+    ("CUTree", "param_cutree", "base_cutree", "#1F77B4"),  # 蓝色
+    ("QComp", "param_qcomp", "base_qcomp", "#9467BD"),  # 紫色
+]
 
 # 平滑窗口 (模拟 Lookahead)
 # 40帧 @ 30fps ≈ 1.3秒，符合 x265 默认 lookahead
@@ -20,7 +24,6 @@ LOOKAHEAD_WINDOW = 40
 
 # === 样式配置 ===
 COLOR_BG = "#A9A9A9"  # 背景特征颜色 (深灰)
-COLOR_FG = "#8B0000"  # 前景参数颜色 (深红)
 ALPHA_BG = 0.3  # 背景透明度
 
 plt.style.use("seaborn-v0_8-whitegrid")
@@ -34,7 +37,7 @@ def load_json(path):
 
 def calculate_phi_weights(model_config):
     """
-    根据 Phi Matrix 计算综合特征权重
+    根据 Phi Matrix 计算综合特征权重 (保持原逻辑不变)
     """
     phi = model_config["phi_matrix"]
     modules = model_config["modules"]  # ["VAQ", "CUTree", ...]
@@ -75,44 +78,60 @@ def main():
     # 1. 加载数据
     print("Loading data...")
     df = pd.read_csv(INPUT_CSV)
-    model_config = load_json(MODEL_CONFIG_PATH)
 
-    # 2. 计算综合特征 (Omega)
-    # 使用 Phi 矩阵权重
-    weights = calculate_phi_weights(model_config)
-    print("Feature Weights (from Phi):", weights)
+    # 注意：如果本地没有 model_config.json，你需要注释掉下面这行并手动指定 weights
+    try:
+        model_config = load_json(MODEL_CONFIG_PATH)
+        # 2. 计算综合特征 (Omega)
+        weights = calculate_phi_weights(model_config)
+        print("Feature Weights (from Phi):", weights)
+    except FileNotFoundError:
+        print("Warning: Config file not found. Using equal weights for features.")
+        feat_cols = [c for c in df.columns if c.startswith("feat_")]
+        weights = {c: 1.0 / len(feat_cols) for c in feat_cols}
 
     df["omega"] = 0.0
     for col, w in weights.items():
         if col in df.columns:
             df["omega"] += df[col] * w
 
-    # 3. 计算参数偏移 (Delta P)
-    df["delta_p"] = df[TARGET_PARAM_COL] - df[BASE_PARAM_COL]
-
-    # 4. Lookahead 平滑 (均值滤波)
-    # center=True 保证相位不滞后
+    # 平滑背景特征
     df["omega_smooth"] = (
         df["omega"].rolling(window=LOOKAHEAD_WINDOW, center=True).mean()
     )
-    df["delta_p_smooth"] = (
-        df["delta_p"].rolling(window=LOOKAHEAD_WINDOW, center=True).mean()
-    )
+
+    # 3. [核心修改] 循环计算所有参数的偏移 (Delta P) 并平滑
+    plot_data = []  # 用于存储绘图信息
+
+    for label, target_col, base_col, color in TARGET_PARAMS:
+        # 计算 Delta (Target - Base)
+        delta_col = f"delta_{label}"
+
+        # 确保列存在
+        if target_col in df.columns and base_col in df.columns:
+            df[delta_col] = df[target_col] - df[base_col]
+
+            # 平滑
+            smooth_col = f"smooth_{delta_col}"
+            df[smooth_col] = (
+                df[delta_col].rolling(window=LOOKAHEAD_WINDOW, center=True).mean()
+            )
+
+            # 存储绘图所需信息
+            plot_data.append({"label": label, "color": color, "data": df[smooth_col]})
+        else:
+            print(f"Warning: Columns for {label} not found in CSV.")
 
     # 填充 NaN
     df = df.fillna(method="bfill").fillna(method="ffill")
 
-    # 5. 检测关键事件 (用于标注)
-    # 场景切换: SAD 突变点 (使用未平滑的 SAD)
-    # height 阈值需要根据数据分布自适应，这里取 95% 分位点
+    # 4. 检测关键事件 (用于标注)
+    # 场景切换: SAD 突变点
     sad_thresh = df["feat_sad"].quantile(0.97)
     scene_changes, _ = find_peaks(df["feat_sad"], height=sad_thresh, distance=60)
 
-    # 复杂纹理: Omega 高点
-    omega_thresh = df["omega_smooth"].quantile(0.90)
-
-    # 6. 绘图
-    fig, ax1 = plt.subplots(figsize=(12, 6))
+    # 5. 绘图
+    fig, ax1 = plt.subplots(figsize=(14, 7))  # 稍微加宽一点以容纳更多信息
     t = df["frame_idx"]
 
     # --- 左轴: 综合特征 (背景) ---
@@ -129,25 +148,40 @@ def main():
     ax1.plot(t, df["omega_smooth"], color=COLOR_BG, alpha=0.6, linewidth=1)
 
     ax1.tick_params(axis="y", labelcolor="gray")
-    ax1.set_ylim(0, df["omega_smooth"].max() * 1.3)  # 留出顶部空间给标注
+    # 留出更多顶部空间给图例
+    ax1.set_ylim(0, df["omega_smooth"].max() * 1.4)
     ax1.grid(True, which="major", linestyle="--", alpha=0.5)
 
-    # --- 右轴: 参数偏移 (前景) ---
+    # --- 右轴: 参数偏移 (前景 - 多条曲线) ---
     ax2 = ax1.twinx()
-    param_label = f"Parameter Adjustment ($\Delta {TARGET_PARAM}$)"
-    ax2.set_ylabel(param_label, color=COLOR_FG, fontsize=12, fontweight="bold")
+    ax2.set_ylabel(
+        "Parameter Adjustment ($\Delta P$)",
+        color="#333333",
+        fontsize=12,
+        fontweight="bold",
+    )
 
-    # 粗实线
-    ax2.plot(t, df["delta_p_smooth"], color=COLOR_FG, linewidth=2.5, linestyle="-")
-    ax2.tick_params(axis="y", labelcolor=COLOR_FG)
+    # [核心修改] 循环绘制每一条曲线
+    lines = []
+    for item in plot_data:
+        (l,) = ax2.plot(
+            t,
+            item["data"],
+            color=item["color"],
+            linewidth=2,
+            linestyle="-",
+            label=f"$\Delta$ {item['label']}",
+        )
+        lines.append(l)
 
-    # --- 标注 ---
-    # 1. 场景切换 (垂直虚线)
+    ax2.tick_params(axis="y", labelcolor="#333333")
+
+    # --- 标注 (Scene Changes) ---
     if len(scene_changes) > 0:
         print(f"Detected {len(scene_changes)} scene changes.")
         for i, idx in enumerate(scene_changes):
             ax1.axvline(x=idx, color="black", linestyle="--", alpha=0.4)
-            # 只在第一个切换点写文字，避免拥挤
+            # 只在第一个点标注，避免拥挤
             if i == 0:
                 ax1.text(
                     idx,
@@ -159,54 +193,31 @@ def main():
                     color="black",
                 )
 
-    # 2. 复杂纹理/高响应区 (箭头)
-    # 找到 Delta P 的最高峰
-    max_idx = df["delta_p_smooth"].idxmax()
-    max_val = df["delta_p_smooth"].max()
-
-    ax2.annotate(
-        "Max Algorithm\nResponse",
-        xy=(max_idx, max_val),
-        xytext=(max_idx, max_val + 0.5),
-        arrowprops=dict(facecolor=COLOR_FG, shrink=0.05, width=1.5, headwidth=8),
-        ha="center",
-        fontsize=10,
-        fontweight="bold",
-        color=COLOR_FG,
-    )
-
     # --- 图例 ---
-    # 自定义图例句柄以合并双轴
+    # 背景图例 Handle
     patch_bg = mpatches.Patch(
         color=COLOR_BG, alpha=ALPHA_BG, label="Video Complexity ($\Omega$)"
     )
-    line_fg = mpatches.Rectangle(
-        (0, 0),
-        1,
-        1,
-        color=COLOR_FG,
-        label=f"Adaptive Response ($\Delta {TARGET_PARAM}$)",
-    )
+
+    # 合并所有图例 Handles
+    handles = [patch_bg] + lines
 
     plt.legend(
-        handles=[patch_bg, line_fg],
+        handles=handles,
         loc="upper left",
+        bbox_to_anchor=(0, 1),  # 放在左上角外侧一点，或内部顶部
         frameon=True,
         framealpha=0.95,
         fontsize=10,
+        ncol=2,  # 分两列显示，节省垂直空间
     )
 
-    # plt.title(
-    #     f"Real-time Parameter Evolution: {TARGET_PARAM.upper()}\n(Smoothed with {LOOKAHEAD_WINDOW}-frame Lookahead)",
-    #     fontsize=14,
-    #     pad=15,
-    # )
     plt.tight_layout()
 
-    output_img = "parameter_evolution.pdf"
+    output_img = "parameter_evolution_multi.pdf"
     plt.savefig(output_img, dpi=300)
     print(f"Plot saved to {output_img}")
-    # plt.show() # 如果在无界面环境运行，请注释此行
+    # plt.show()
 
 
 if __name__ == "__main__":

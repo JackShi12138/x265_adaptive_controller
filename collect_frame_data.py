@@ -11,26 +11,26 @@ from utils.yuv_io import YUVReader
 
 # === 配置区域 ===
 # [Updated] 使用您刚才报错日志中的视频路径
-VIDEO_PATH = "/home/shiyushen/x265_sequence/ClassB/BQTerrace_1920x1080_60.yuv"
+VIDEO_PATH = "/home/shiyushen/x265_sequence/ClassB/ParkScene_1920x1080_24.yuv"
 WIDTH = 1920
 HEIGHT = 1080
-FPS = 60
+FPS = 24
 
 # 配置文件路径
 MODEL_CONFIG_PATH = "config/model_config.json"
 INITIAL_PARAMS_PATH = "config/initial_params.json"
-PROFILE = "Low"  # 使用 Medium 档位作为基准
+PROFILE = "Medium"  # 使用 Medium 档位作为基准
 
 # [Updated] 使用您之前搜索出的最优超参数
 BEST_HYPERPARAMS = {
-    "a": 3.4334777984915212,
-    "b": 2.4523922821071436,
+    "a": 1.1033795668037922,
+    "b": 1.069230192189941,
     "beta": {
-        "VAQ": 2.29640051109266,
-        "CUTree": 6.511506268859984,
-        "PsyRD": 5.174069826859602,
-        "PsyRDOQ": 6.417653537154299,
-        "QComp": 6.971636320383645,
+        "VAQ": 0.8315122080542713,
+        "CUTree": 0.9131054824257663,
+        "PsyRD": 0.5567048950207648,
+        "PsyRDOQ": 1.1188971214787788,
+        "QComp": 0.20634856441171628,
     },
 }
 

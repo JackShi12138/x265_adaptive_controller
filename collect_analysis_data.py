@@ -27,18 +27,20 @@ TARGET_SEQS = [
     "BasketballDrive_1920x1080_50",  # Mixed Motion
     "ParkScene_1920x1080_24",
     "BlowingBubbles_416x240_50",
+    "BasketballPass_416x240_50",
+    "Cactus_1920x1080_50"
 ]
 
 # Online 模式使用的超参数 (请替换为您搜索出的最优参数)
 BEST_HYPERPARAMS = {
-    "a": 3.044929438592169,
-    "b": 2.36521356355403,
+    "a": 1.1033795668037922,
+    "b": 1.069230192189941,
     "beta": {
-        "VAQ": 6.317753857221986,
-        "CUTree": 3.0987080653981685,
-        "PsyRD": 3.1385016893339084,
-        "PsyRDOQ": 6.070245329186924,
-        "QComp": 7.167432624475883,
+        "VAQ": 0.8315122080542713,
+        "CUTree": 0.9131054824257663,
+        "PsyRD": 0.5567048950207648,
+        "PsyRDOQ": 1.1188971214787788,
+        "QComp": 0.20634856441171628,
     },
 }
 
@@ -273,7 +275,7 @@ def process_single_sequence(task_args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--workers", type=int, default=1, help="Number of parallel workers"
+        "--workers", type=int, default=16, help="Number of parallel workers"
     )
     args = parser.parse_args()
 

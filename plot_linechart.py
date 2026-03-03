@@ -7,9 +7,9 @@ import os
 # ==================== 1. 全局配置区域 ====================
 
 FILES = {
-    "Baseline": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/RaceHorses_832x480_30/slow/coeffs_baseline.txt",
-    "Offline": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/RaceHorses_832x480_30/offline/coeffs_offline.txt",
-    "Online": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260125_154912/RaceHorses_832x480_30/online/coeffs_online.txt",
+    "Baseline": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/ParkScene_1920x1080_24/slow/coeffs_baseline.txt",
+    "Offline": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/ParkScene_1920x1080_24/offline/coeffs_offline.txt",
+    "Online": "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/ParkScene_1920x1080_24/online/coeffs_online.txt",
 }
 
 # 纹理区固定使用 8x8 (Depth 3)
@@ -271,14 +271,14 @@ def plot_final():
         if size == TEXTURE_SIZE:
             ax.legend(loc="lower right", frameon=True, framealpha=0.9, fontsize=10)
 
-    plt.suptitle(
-        "Fig. C: Adaptive Coefficient Energy Analysis",
-        fontsize=15,
-        fontweight="bold",
-        y=0.98,
-    )
+    # plt.suptitle(
+    #     "Fig. C: Adaptive Coefficient Energy Analysis",
+    #     fontsize=15,
+    #     fontweight="bold",
+    #     y=0.98,
+    # )
     plt.tight_layout()
-    plt.savefig("Fig_C_Adaptive_Coeffs_FullScan.png", dpi=300)
+    plt.savefig("Fig_C_Adaptive_Coeffs_FullScan.pdf", dpi=300)
     print("✅ 完成！")
 
 

@@ -12,3 +12,4 @@ best_hyperparams.json
 *.pdf
 best_hyperparams/
 analysis_data/
+benchmark_results_timing_only/
