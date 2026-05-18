@@ -3,10 +3,18 @@ import re
 import shutil
 import subprocess
 import sys
+import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
+
+# 加载自定义字体文件（如果您在服务器上没有安装该字体，这行是必须的）
+try:
+    matplotlib.font_manager.fontManager.addfont("/home/shiyushen/font/times.ttf")
+except Exception:
+    pass
+plt.rcParams["font.family"] = "Times New Roman"
 
 # ==================== 1. 全局配置区域 ====================
 
@@ -170,41 +178,48 @@ def parse_traces_rigorous():
 
 
 def map_qp_to_depth(qp, median_qp, label):
+    # 保持短标签缩写，防止大字号下单栏横轴互相重叠
     if "Baseline" in label:
         if qp < median_qp:
-            return "Depth 1 (32x32)"
+            return "D1 (32x32)"
         else:
-            return "Depth 2 (16x16)"
+            return "D2 (16x16)"
     else:
         if qp <= median_qp - 2:
-            return "Depth 0 (64x64)"
+            return "D0 (64x64)"
         elif qp <= median_qp:
-            return "Depth 1 (32x32)"
+            return "D1 (32x32)"
         elif qp <= median_qp + 3:
-            return "Depth 2 (16x16)"
+            return "D2 (16x16)"
         else:
-            return "Depth 3 (8x8)"
+            return "D3 (8x8)"
 
 
 def plot_final_chart(df):
-    """
-    绘制图表：去掉红字注释，图例移至右下角
-    """
+    """绘制单栏科研图表：精准匹配 8pt 目标字号"""
     print("\n" + "=" * 40)
-    print(" >>> 阶段三：绘制图表 (Clean Style)")
+    print(" >>> 阶段三：绘制图表 (精准适配 8pt 图注)")
     print("=" * 40)
 
     plt.figure(figsize=(10, 6))
-    sns.set_theme(style="whitegrid", font_scale=1.1)  # 稍微调大字体，更易读
-    depth_order = [
-        "Depth 0 (64x64)",
-        "Depth 1 (32x32)",
-        "Depth 2 (16x16)",
-        "Depth 3 (8x8)",
-    ]
+
+    # font_scale 设为 1.85，确保缩放到单栏(35%)后落于目标字号
+    sns.set_theme(
+        style="whitegrid",
+        font_scale=1.85,
+        rc={
+            "font.family": "serif",
+            "font.serif": ["Times New Roman"],
+            # 刻度标签设为 21 (缩放后精准落在 7.35pt，比标题略小，层次分明)
+            "xtick.labelsize": 21,
+            "ytick.labelsize": 21,
+        },
+    )
+
+    depth_order = ["D0 (64x64)", "D1 (32x32)", "D2 (16x16)", "D3 (8x8)"]
     colors = ["#95a5a6", "#3498db", "#e74c3c"]
 
-    # 绘图
+    # 保持线条粗细 2.0，完美适配稍小的字体
     sns.boxplot(
         x="CU Depth",
         y="QP",
@@ -213,20 +228,28 @@ def plot_final_chart(df):
         order=depth_order,
         palette=colors,
         width=0.7,
-        fliersize=2,
+        fliersize=2.5,
+        linewidth=2.0,
     )
 
-    # 设置标题和标签
-    plt.ylabel("Quantization Parameter (QP)", fontsize=12)
-    plt.xlabel("CU Depth & Texture Complexity", fontsize=12)
+    # 坐标轴标题字号精准设为 23 (缩放后刚好落在 8.05pt 左右)
+    plt.ylabel("Quantization Parameter (QP)", fontsize=23)
+    plt.xlabel("CU Depth & Texture Complexity", fontsize=23)
 
-    # 关键修改：图例移至右下角
-    plt.legend(title="Algorithm", loc="lower right", frameon=True, framealpha=0.9)
+    # 图例标题(21)和内容(19)，缩放后约为 7.3pt 和 6.6pt，精致不占空间
+    plt.legend(
+        title="Algorithm",
+        title_fontsize=21,
+        fontsize=19,
+        loc="lower right",
+        frameon=True,
+        framealpha=0.9,
+    )
 
     plt.tight_layout()
     plt.savefig("Fig_B_Result_Clean.pdf", dpi=300)
-    print("✅ 图表已保存: Fig_B_Result_Clean.pdf")
-    # plt.show()
+    plt.savefig("Fig_B_Result_Clean.png", dpi=300)
+    print("✅ 单栏图表已成功保存 (适配8pt): Fig_B_Result_Clean.pdf")
 
 
 if __name__ == "__main__":

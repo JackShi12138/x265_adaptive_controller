@@ -4,6 +4,11 @@ import seaborn as sns
 from scipy.ndimage import gaussian_filter1d
 import os
 
+import matplotlib
+
+matplotlib.font_manager.fontManager.addfont("/home/shiyushen/font/times.ttf")
+plt.rcParams["font.family"] = "Times New Roman"
+
 # ==================== 1. 全局配置区域 ====================
 
 FILES = {
@@ -204,32 +209,35 @@ def plot_final():
         print("错误: 缺少 Baseline 数据")
         return
 
-    # 3. 绘图
-    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    # 3. 绘图：极限单栏双排，宽 3.5 英寸，高 1.8 英寸
+    fig, axes = plt.subplots(1, 2, figsize=(3.5, 1.8), dpi=300)
     sns.set_theme(style="whitegrid")
 
-    # 子图标题自动适配
-    title_flat = f"Depth 0 (64x64)" if flat_size == 64 else f"Depth 1 (32x32)"
+    # 极简标题，防止文字过长重叠
+    title_flat = f"Depth 0: Flat" if flat_size == 64 else f"Depth 1: Flat"
     if flat_size == 16:
-        title_flat = "Depth 2 (16x16) [Fallback]"
+        title_flat = "Depth 2: Flat [Fall]"
 
     scenarios = [
-        (flat_size, f"{title_flat}: Flat / Protected Areas", axes[0]),
-        (TEXTURE_SIZE, f"Depth 3 (8x8): Texture / Masked Areas", axes[1]),
+        (flat_size, title_flat, axes[0]),
+        (TEXTURE_SIZE, "Depth 3: Texture", axes[1]),
     ]
 
     styles = {
         "Offline": {"color": "#3498db", "label": "Offline", "ls": "-"},
-        "Online": {"color": "#e74c3c", "label": "Online (Proposed)", "ls": "-"},
+        "Online": {
+            "color": "#e74c3c",
+            "label": "Online (Prop.)",
+            "ls": "-",
+        },  # 缩写 Proposed
     }
 
     x_axis = np.arange(64)
 
-    for size, title, ax in scenarios:
+    for i, (size, title, ax) in enumerate(scenarios):
         base_E = data_map["Baseline"][size] + 1e-6
-        ax.axhline(
-            1.0, color="gray", linestyle="--", linewidth=1.5, label="Baseline (Ref)"
-        )
+        # 基准线调细
+        ax.axhline(1.0, color="gray", linestyle="--", linewidth=0.8, label="Baseline")
 
         all_y_values = [1.0]
 
@@ -247,12 +255,13 @@ def plot_final():
                 all_y_values.extend(ratio_smooth)
 
                 st = styles[algo]
+                # 曲线调细
                 ax.plot(
                     x_axis,
                     ratio_smooth,
                     color=st["color"],
                     label=st["label"],
-                    linewidth=2.5,
+                    linewidth=1.2,
                 )
 
         # 智能 Y 轴
@@ -261,25 +270,43 @@ def plot_final():
         ax.set_ylim(max(0, y_min - pad), y_max + pad)
         ax.set_xlim(0, 63)
 
-        ax.set_title(title, fontsize=12, fontweight="bold", pad=10)
-        ax.set_xlabel("Frequency Index (Low -> High)", fontsize=10)
-        ax.set_ylabel("Coefficient Energy Ratio", fontsize=10)
+        # 精简标题和坐标轴字号
+        ax.set_title(title, fontsize=8, fontweight="bold", pad=4)
+        ax.set_xlabel("Freq Index", fontsize=7)
 
-        ax.text(1, y_max, "Low Freq", color="gray", fontsize=9, va="bottom")
-        ax.text(50, y_max, "High Freq", color="gray", fontsize=9, va="bottom")
+        # 为了节省横向空间，仅在左侧图保留 Y 轴 Label
+        if i == 0:
+            ax.set_ylabel("Energy Ratio", fontsize=7)
 
+        # 调整刻度字号和数量（避免刻度挤在一起）
+        ax.tick_params(axis="both", which="major", labelsize=6)
+        ax.set_xticks([0, 31, 63])  # 强制只显示三个刻度
+
+        # 辅助文字极简处理并靠两端对齐
+        ax.text(2, y_max, "Low", color="gray", fontsize=6, va="bottom", ha="left")
+        ax.text(61, y_max, "High", color="gray", fontsize=6, va="bottom", ha="right")
+
+        # 图例：仅在右侧图表显示，字号压到最小
         if size == TEXTURE_SIZE:
-            ax.legend(loc="lower right", frameon=True, framealpha=0.9, fontsize=10)
+            # bbox_to_anchor 微调位置，避免遮挡曲线
+            ax.legend(
+                loc="lower right",
+                frameon=True,
+                framealpha=0.8,
+                fontsize=5.5,
+                handlelength=1.5,
+                handletextpad=0.3,
+                borderpad=0.3,
+            )
 
-    # plt.suptitle(
-    #     "Fig. C: Adaptive Coefficient Energy Analysis",
-    #     fontsize=15,
-    #     fontweight="bold",
-    #     y=0.98,
-    # )
-    plt.tight_layout()
-    plt.savefig("Fig_C_Adaptive_Coeffs_FullScan.pdf", dpi=300)
-    print("✅ 完成！")
+    # 开启紧凑模式并手动调整子图间距
+    plt.tight_layout(pad=0.5, w_pad=1.0)
+
+    # 保存输出
+    plt.savefig(
+        "Fig_C_Adaptive_Coeffs_SideBySide.pdf", bbox_inches="tight", pad_inches=0.01
+    )
+    print("✅ 完成！极限单栏并排版本已生成。")
 
 
 if __name__ == "__main__":

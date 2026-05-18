@@ -5,7 +5,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.font_manager as font_manager
+import matplotlib
 
+# 加载自定义字体
+matplotlib.font_manager.fontManager.addfont("/home/shiyushen/font/times.ttf")
+plt.rcParams["font.family"] = "Times New Roman"
 
 # ================= 配置区域 =================
 
@@ -36,9 +40,8 @@ TARGET_SEQUENCES = [
 # 清晰度档位 (x轴排序依据)
 PROFILES = ["Very Low", "Low", "Medium", "High"]
 
-# ================= [核心修改] 样式配置 (图例名称已更新) =================
+# ================= 样式配置 =================
 METHODS = {
-    # Baseline: 灰色虚线
     "slow": {
         "label": "Baseline (Slow)",
         "color": "#555555",
@@ -49,19 +52,17 @@ METHODS = {
         "alpha": 0.7,
         "zorder": 1,
     },
-    # [修改点] SSIM: 标签改为 SSIM-based RDO
     "ssim": {
-        "label": "SSIM-based RDO",  # <--- 这里改了
-        "color": "#9467bd",  # 紫色
-        "marker": "D",  # 菱形
+        "label": "SSIM-based RDO",
+        "color": "#9467bd",
+        "marker": "D",
         "markersize": 5,
-        "linestyle": "-.",  # 点划线
+        "linestyle": "-.",
         "linewidth": 1.0,
         "markeredgecolor": "white",
         "markeredgewidth": 0.4,
         "zorder": 2,
     },
-    # Offline: 蓝色
     "offline": {
         "label": "Offline (Static)",
         "color": "#1f77b4",
@@ -73,7 +74,6 @@ METHODS = {
         "markeredgewidth": 0.4,
         "zorder": 3,
     },
-    # Online: 红色 (最突出)
     "online": {
         "label": "Online (Adaptive)",
         "color": "#d62728",
@@ -137,7 +137,6 @@ def parse_x265_bitrate(csv_file, fps):
 
 
 def extract_online_metrics(vmaf_path, csv_path, fps):
-    """读取 Online/SSIM 的实时数据"""
     vmaf, bitrate = None, None
     try:
         with open(vmaf_path, "r") as f:
@@ -153,7 +152,6 @@ def extract_online_metrics(vmaf_path, csv_path, fps):
 
 
 def load_static_json(path):
-    """加载 Baseline 和 Offline 的 JSON 数据"""
     if not os.path.exists(path):
         print(f"[Warning] Static data file not found: {path}")
         return {}
@@ -166,19 +164,11 @@ def load_static_json(path):
 
 
 def collect_data(experiment_dir):
-    """
-    混合数据收集逻辑：
-    - Online/SSIM: 从 experiment_dir 扫描
-    - Slow/Offline: 从 JSON 文件查找
-    """
     data = {}
-
-    # 1. 加载静态基准数据
     print("Loading static baseline/offline results...")
     baseline_db = load_static_json(BASELINE_JSON_PATH)
     offline_db = load_static_json(OFFLINE_JSON_PATH)
 
-    # 2. 扫描实验目录获取 Online/SSIM 序列
     seq_dirs = sorted(
         [
             d
@@ -195,13 +185,11 @@ def collect_data(experiment_dir):
         fps = extract_fps(seq)
         seq_path = os.path.join(experiment_dir, seq)
 
-        # === [核心修改] 遍历需要从文件夹读取的方法 (Online 和 SSIM) ===
         dynamic_methods = ["online", "ssim"]
 
         for method in dynamic_methods:
             points = []
             for profile in PROFILES:
-                # 路径假设: Sequence -> Profile -> method_name(online/ssim)
                 method_path = os.path.join(seq_path, profile, method)
                 csv_file = os.path.join(method_path, "x265_log.csv")
                 vmaf_file = os.path.join(method_path, "vmaf.json")
@@ -211,13 +199,11 @@ def collect_data(experiment_dir):
                     if br is not None and score is not None:
                         points.append((br, score))
 
-            # 按码率排序
             if points:
                 data[seq][method] = sorted(points, key=lambda x: x[0])
             else:
                 data[seq][method] = []
 
-        # === Part B: 读取 Slow/Offline 数据 (静态) ===
         def get_static_points(db, key):
             raw_list = db.get(key, [])
             points = []
@@ -232,19 +218,19 @@ def collect_data(experiment_dir):
     return data
 
 
-# ================= 绘图函数 (保持不变) =================
+# ================= 绘图函数 =================
 
 
 def setup_ieee_style():
+    # 彻底关闭自动排版干扰
     plt.rcParams.update(
         {
-            "font.family": "serif",
+            "font.family": "Times New Roman",
             "font.size": 9,
             "axes.labelsize": 9,
             "legend.fontsize": 8,
             "xtick.labelsize": 8,
             "ytick.labelsize": 8,
-            "figure.autolayout": True,
         }
     )
 
@@ -259,7 +245,7 @@ def get_smart_ylim(methods_data):
     min_v, max_v = min(all_vmaf), max(all_vmaf)
     padding = (max_v - min_v) * 0.1 if (max_v - min_v) > 5 else 2.0
     bottom = max(0, min_v - padding)
-    top = min(100.5, max_v + padding)
+    top = min(100.0, max_v + padding)
     if top - bottom < 5:
         bottom = top - 5
     return (bottom, top)
@@ -275,7 +261,6 @@ def plot_individual_curves(data):
         plt.figure(figsize=(5, 4))
         sorted_methods = sorted(METHODS.keys(), key=lambda m: METHODS[m]["zorder"])
 
-        # 实际绘图
         for method in sorted_methods:
             points = methods_data.get(method, [])
             if not points:
@@ -284,7 +269,6 @@ def plot_individual_curves(data):
             style = METHODS[method]
             plt.plot(x, y, **{k: v for k, v in style.items() if k != "zorder"})
 
-            # 为了图例正确显示（避免双重绘图的bug，这里只为了加Label）
             plt.plot(
                 [],
                 [],
@@ -292,7 +276,6 @@ def plot_individual_curves(data):
                 **{k: v for k, v in style.items() if k not in ["zorder", "label"]},
             )
 
-        # 清理多余的绘图句柄并重新绘制 (更干净的写法)
         plt.clf()
         for method in sorted_methods:
             points = methods_data.get(method, [])
@@ -318,20 +301,29 @@ def plot_individual_curves(data):
 
 
 def plot_combined_grid(data):
-    valid_seqs = [s for s in data.keys() if sum(len(v) for v in data[s].values()) > 0]
-    if not valid_seqs:
-        return
-    plot_seqs = valid_seqs[:4]
+    ordered_seqs = [
+        "PeopleOnStreet_2560x1600_30_crop",
+        "ParkScene_1920x1080_24",
+        "RaceHorses_832x480_30",
+        "BasketballPass_416x240_50",
+    ]
 
-    fig, axes = plt.subplots(2, 2, figsize=(3.8, 3.7))
-    axes = axes.flatten()
+    plot_seqs = [seq for seq in ordered_seqs if seq in data]
+    if not plot_seqs:
+        return
+
+    title_map = {
+        "PeopleOnStreet_2560x1600_30_crop": "(a) PeopleOnStreet",
+        "ParkScene_1920x1080_24": "(b) ParkScene",
+        "RaceHorses_832x480_30": "(c) RaceHorses",
+        "BasketballPass_416x240_50": "(d) BasketballPass",
+    }
+
+    fig, axes = plt.subplots(1, 4, figsize=(7.16, 2.6))
 
     sorted_methods = sorted(METHODS.keys(), key=lambda m: METHODS[m]["zorder"])
 
     for i, ax in enumerate(axes):
-        if i >= len(plot_seqs):
-            ax.axis("off")
-            continue
         seq = plot_seqs[i]
         methods_data = data[seq]
 
@@ -340,52 +332,59 @@ def plot_combined_grid(data):
             if not points:
                 continue
             x, y = zip(*points)
-            style = METHODS[method]
+
+            style = METHODS[method].copy()
+            style["markersize"] = max(3.5, style.get("markersize", 5) - 1.5)
+            style["linewidth"] = max(0.8, style.get("linewidth", 1.0) - 0.2)
+
             lbl = style["label"] if i == 0 else ""
-
-            small_style = style.copy()
-            small_style["markersize"] -= 1
-            small_style["linewidth"] = max(0.5, small_style["linewidth"] - 0.2)
-
             ax.plot(
                 x,
                 y,
                 label=lbl,
-                **{
-                    k: v for k, v in small_style.items() if k not in ["zorder", "label"]
-                },
+                **{k: v for k, v in style.items() if k not in ["zorder", "label"]},
             )
 
-        ax.set_title(seq.split("_")[0], fontsize=9, pad=3)
+        display_title = title_map.get(seq, f"({chr(97+i)}) {seq.split('_')[0]}")
+
+        ax.set_xlabel(f"Bitrate (kbps)\n\n{display_title}", fontsize=8, labelpad=3)
         ax.grid(True, linestyle=":", alpha=0.6)
 
         ylim = get_smart_ylim(methods_data)
         ax.set_ylim(ylim)
 
-        if i >= 2:
-            ax.set_xlabel("Bitrate (kbps)", fontsize=8)
-        if i % 2 == 0:
-            ax.set_ylabel("VMAF", fontsize=8)
+        if i == 0:
+            ax.set_ylabel("VMAF Score", fontsize=8, labelpad=2)
 
+        ax.tick_params(axis="both", which="major", labelsize=7, pad=2)
+        ax.locator_params(axis="x", nbins=4)
+
+    # ================= 【终极物理布局重构】 =================
     if len(plot_seqs) > 0:
         handles, labels = axes[0].get_legend_handles_labels()
-        # 更新图例列数为 4 (因为现在有4个方法了)
         fig.legend(
             handles,
             labels,
-            loc="upper center",
-            bbox_to_anchor=(0.5, 0.995),
-            ncol=2,  # 4个图例如果排一行可能太宽，建议改2行或根据实际效果调整
+            loc="lower center",
+            bbox_to_anchor=(0.5, 0.82),  # 图例锚点设置在整个画面高度 82% 的绝对位置
+            ncol=4,
             frameon=False,
             fontsize=8,
-            handlelength=2.5,
+            handletextpad=0.4,
+            columnspacing=1.2,
         )
 
-    plt.tight_layout(rect=[0, 0, 1, 0.89])
+    # 彻底弃用 plt.tight_layout()！
+    # 使用 subplots_adjust 强行划定地盘：
+    # top=0.80 意味着所有子图的顶部绝对不能超过画布 80% 的高度，正好顶在图例下方
+    # bottom=0.25 给 X 轴下面的换行文字留出充足空间
+    # left 和 right 控制左右贴边，wspace=0.15 保证子图间距均匀
+    plt.subplots_adjust(left=0.06, right=0.99, bottom=0.25, top=0.80, wspace=0.15)
 
     output_path = os.path.join(OUTPUT_DIR, "Combined_RD_Grid.pdf")
-    plt.savefig(output_path)
-    print(f"Saved Grid: {output_path}")
+    # pad_inches=0.01 将 PDF 边缘裁剪到极致
+    plt.savefig(output_path, bbox_inches="tight", pad_inches=0.01)
+    print(f"Saved 1x4 Grid: {output_path}")
     plt.close()
 
 

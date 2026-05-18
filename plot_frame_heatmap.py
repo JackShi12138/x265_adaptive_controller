@@ -4,6 +4,12 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.gridspec import GridSpec
 
+# 设置自定义字体
+import matplotlib
+
+matplotlib.font_manager.fontManager.addfont("/home/shiyushen/font/times.ttf")
+plt.rcParams["font.family"] = "Times New Roman"
+
 # ================= 配置区域 =================
 # 1. 视频路径
 BASELINE_VIDEO = "/home/shiyushen/x265_adaptive_controller/analysis_data/20260213_230133_208/RaceHorses_832x480_30/slow/output.hevc"
@@ -68,11 +74,11 @@ def generate_composite_figure():
     ax_main = fig.add_subplot(gs[:, :2])
     im = ax_main.imshow(diff_map, cmap="jet", vmin=0, vmax=VMAX_VAL)
     ax_main.axis("off")
-    ax_main.set_title(f"Difference Heatmap (Frame {FRAME_INDEX})", y=-0.1, fontsize=12)
+    ax_main.set_title(f"Difference Heatmap (Frame {FRAME_INDEX})", y=-0.1, fontsize=15)
 
     # 添加 Colorbar
     cbar = plt.colorbar(im, ax=ax_main, fraction=0.046, pad=0.04)
-    cbar.set_label("Absolute Difference Level")
+    cbar.set_label("Absolute Difference Level", fontsize=13)
 
     # 在热力图上画框
     def add_box_to_map(ax, roi, color, label):
@@ -86,7 +92,7 @@ def generate_composite_figure():
         )
         ax.add_patch(rect)
         # 可选：在框旁边加标签
-        ax.text(roi[0], roi[1] - 10, label, color=color, fontweight="bold", fontsize=10)
+        ax.text(roi[0], roi[1] - 10, label, color=color, fontweight="bold", fontsize=13)
 
     add_box_to_map(ax_main, ROI_TEXTURE, "red", "Texture")
     add_box_to_map(ax_main, ROI_FLAT, "lime", "Flat")
@@ -100,7 +106,7 @@ def generate_composite_figure():
         patch = img[roi[1] : roi[1] + roi[3], roi[0] : roi[0] + roi[2]]
         ax.imshow(patch)
         ax.axis("off")
-        ax.set_title(title, fontsize=10)
+        ax.set_title(title, fontsize=13)
         # 给子图加边框，颜色与热力图上的框对应
         for spine in ax.spines.values():
             spine.set_edgecolor(border_color)

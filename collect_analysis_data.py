@@ -28,7 +28,7 @@ TARGET_SEQS = [
     "ParkScene_1920x1080_24",
     "BlowingBubbles_416x240_50",
     "BasketballPass_416x240_50",
-    "Cactus_1920x1080_50"
+    "Cactus_1920x1080_50",
 ]
 
 # Online 模式使用的超参数 (请替换为您搜索出的最优参数)

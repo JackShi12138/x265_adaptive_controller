@@ -14,3 +14,4 @@ best_hyperparams/
 analysis_data/
 benchmark_results_timing_only/
 extended_metrics_eval/results_json/
+config/
